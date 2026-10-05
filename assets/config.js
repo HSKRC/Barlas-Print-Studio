@@ -1,0 +1,1 @@
+window.BPS_CONFIG={supabaseUrl:"https://yyxobksldeifjlxjovak.supabase.co",supabasePublishableKey:"sb_publishable_zcDehU_XlndtiGlKvDpIEQ_7L8gLo92",businessName:"Barlas Print Studio",serviceArea:"Dandenong & Melbourne, Victoria",currency:"AUD"};
