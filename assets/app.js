@@ -21,11 +21,24 @@ if(quote)quote.addEventListener('submit',async e=>{
   const input=$('#artwork'),files=[...(input?.files||[])];
 
   if(!s){
-    const{error}=await supabase.from('quote_requests').insert(row);
+    const{data,error}=await supabase.rpc('submit_guest_quote',{
+      p_full_name:row.full_name,
+      p_email:row.email,
+      p_phone:row.phone||null,
+      p_product:row.product,
+      p_quantity:row.quantity,
+      p_size:row.size||null,
+      p_paper:row.paper||null,
+      p_print_sides:row.print_sides||'single',
+      p_finish:row.finish||'standard',
+      p_design_service:row.design_service,
+      p_notes:row.notes||null,
+      p_website:fd.get('website')||null
+    });
     if(error)return msg(m,error.message,false);
     msg(m,files.length
-      ?'Quote request received. Your quote was saved; sign in if you also want to upload artwork securely.'
-      :'Quote request received. We will review the details and respond with pricing.');
+      ?'Quote #'+data+' received. Save this quote number. Sign in and claim it from your account to upload artwork and track progress.'
+      :'Quote #'+data+' received. Save this quote number so you can claim it later from your account.');
     quote.reset();
     return;
   }
@@ -104,9 +117,25 @@ async function account(){
   $('#resetRequestForm')?.classList.add('hidden');
   $('#accountBox').classList.remove('hidden');
   $('#accountEmail').textContent=s.user.email;
-  const{data}=await supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').order('created_at',{ascending:false});
-  $('#orders').innerHTML=(data||[]).map(o=>`<tr><td>${o.order_number}</td><td class="status">${o.status.replaceAll('_',' ')}</td><td>${money(o.total)}</td><td>${new Date(o.created_at).toLocaleDateString()}</td><td>${o.due_at?new Date(o.due_at).toLocaleDateString():'—'}</td><td>${o.delivery_method||'—'}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>';
+  const[q,o]=await Promise.all([
+    supabase.from('quote_requests').select('id,product,quantity,status,created_at').order('created_at',{ascending:false}),
+    supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').order('created_at',{ascending:false})
+  ]);
+  $('#quotes').innerHTML=(q.data||[]).map(x=>`<tr><td>#${x.id}</td><td>${x.product.replaceAll('_',' ')}</td><td>${x.quantity}</td><td class="status">${x.status.replaceAll('_',' ')}</td><td>${new Date(x.created_at).toLocaleDateString()}</td></tr>`).join('')||'<tr><td colspan="5">No quote requests linked to this account.</td></tr>';
+  $('#orders').innerHTML=(o.data||[]).map(x=>`<tr><td>${x.order_number}</td><td class="status">${x.status.replaceAll('_',' ')}</td><td>${money(x.total)}</td><td>${new Date(x.created_at).toLocaleDateString()}</td><td>${x.due_at?new Date(x.due_at).toLocaleDateString():'—'}</td><td>${x.delivery_method||'—'}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>';
 }
+const claimQuote=$('#claimQuoteForm');
+if(claimQuote)claimQuote.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const m=$('#claimQuoteMsg'),id=+(new FormData(claimQuote).get('quote_id')||0);
+  if(!id)return msg(m,'Enter a valid quote number.',false);
+  const{data,error}=await supabase.rpc('claim_guest_quote',{p_quote_id:id});
+  if(error)return msg(m,error.message,false);
+  if(!data)return msg(m,'Quote not found, already claimed, or the quote email does not match this account.',false);
+  msg(m,'Quote #'+id+' is now linked to your account.');
+  claimQuote.reset();
+  await account();
+});
 $('#logout')?.addEventListener('click',async()=>{await supabase.auth.signOut();location.reload()});
 
 const track=$('#trackForm');
