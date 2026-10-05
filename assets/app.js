@@ -1,8 +1,55 @@
-import{supabase,isConfigured}from'./supabase.js';const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],money=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(+n||0);$$('.year').forEach(x=>x.textContent=new Date().getFullYear());const msg=(el,t,ok=true)=>{if(el){el.textContent=t;el.style.borderLeftColor=ok?'#00b8e6':'#e6007e'}};async function session(){return isConfigured?(await supabase.auth.getSession()).data.session:null}
-const quote=$('#quoteForm');if(quote)quote.addEventListener('submit',async e=>{e.preventDefault();const m=$('#quoteMsg');if(!isConfigured)return msg(m,'Supabase is not connected.',false);const fd=new FormData(quote),s=await session(),row={user_id:s?.user?.id||null,full_name:fd.get('full_name'),email:fd.get('email'),phone:fd.get('phone'),product:fd.get('product'),quantity:+fd.get('quantity'),size:fd.get('size'),paper:fd.get('paper'),print_sides:fd.get('print_sides'),finish:fd.get('finish'),design_service:fd.get('design_service')==='yes',notes:fd.get('notes')};const{data,error}=await supabase.from('quote_requests').insert(row).select('id').single();if(error)return msg(m,error.message,false);msg(m,'Quote request #'+data.id+' received. We will review the artwork and requirements.');quote.reset()});
-const login=$('#loginForm');if(login)login.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(login),{error}=await supabase.auth.signInWithPassword({email:f.get('email'),password:f.get('password')});msg($('#authMsg'),error?error.message:'Signed in.',!error);if(!error)location.reload()});
-const signup=$('#signupForm');if(signup)signup.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(signup),{error}=await supabase.auth.signUp({email:f.get('email'),password:f.get('password'),options:{data:{full_name:f.get('full_name')}}});msg($('#authMsg'),error?error.message:'Account created. Check your email if confirmation is enabled.',!error)});
-async function account(){if(!$('#accountBox')||!isConfigured)return;const s=await session();if(!s)return;$('#guestBox')?.classList.add('hidden');$('#accountBox').classList.remove('hidden');$('#accountEmail').textContent=s.user.email;const{data}=await supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').order('created_at',{ascending:false});$('#orders').innerHTML=(data||[]).map(o=>`<tr><td>${o.order_number}</td><td class="status">${o.status}</td><td>${money(o.total)}</td><td>${new Date(o.created_at).toLocaleDateString()}</td><td>${o.due_at?new Date(o.due_at).toLocaleDateString():'—'}</td><td>${o.delivery_method||'—'}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>'}
+import{supabase,isConfigured}from'./supabase.js';
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],money=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(+n||0);
+$$('.year').forEach(x=>x.textContent=new Date().getFullYear());
+const msg=(el,t,ok=true)=>{if(el){el.textContent=t;el.style.borderLeftColor=ok?'#00b8e6':'#e6007e'}};
+async function session(){return isConfigured?(await supabase.auth.getSession()).data.session:null}
+
+const quote=$('#quoteForm');
+if(quote)quote.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const m=$('#quoteMsg');
+  if(!isConfigured)return msg(m,'Supabase is not connected.',false);
+  const fd=new FormData(quote),s=await session();
+  const row={user_id:s?.user?.id||null,full_name:fd.get('full_name'),email:fd.get('email'),phone:fd.get('phone'),product:fd.get('product'),quantity:+fd.get('quantity'),size:fd.get('size'),paper:fd.get('paper'),print_sides:fd.get('print_sides'),finish:fd.get('finish'),design_service:fd.get('design_service')==='yes',notes:fd.get('notes')};
+  const{data,error}=await supabase.from('quote_requests').insert(row).select('id').single();
+  if(error)return msg(m,error.message,false);
+  const input=$('#artwork'),files=[...(input?.files||[])];
+  if(files.length&&!s)return msg(m,'Quote #'+data.id+' received. Sign in to upload artwork securely; the quote itself has been saved.');
+  if(files.length&&s){
+    for(const file of files){
+      const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_'),path=s.user.id+'/quotes/'+data.id+'/'+Date.now()+'-'+safe;
+      const up=await supabase.storage.from('customer-files').upload(path,file,{upsert:false,contentType:file.type});
+      if(up.error)return msg(m,'Quote #'+data.id+' saved, but artwork upload failed: '+up.error.message,false);
+      const meta=await supabase.from('quote_files').insert({quote_id:data.id,user_id:s.user.id,storage_path:path,original_name:file.name});
+      if(meta.error)return msg(m,'Quote #'+data.id+' saved, but file metadata failed: '+meta.error.message,false);
+    }
+  }
+  msg(m,'Quote request #'+data.id+' received'+(files.length?' with artwork uploaded securely.':'.'));
+  quote.reset();
+});
+
+const login=$('#loginForm');
+if(login)login.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(login),{error}=await supabase.auth.signInWithPassword({email:f.get('email'),password:f.get('password')});msg($('#authMsg'),error?error.message:'Signed in.',!error);if(!error)location.reload()});
+const signup=$('#signupForm');
+if(signup)signup.addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(signup),{error}=await supabase.auth.signUp({email:f.get('email'),password:f.get('password'),options:{data:{full_name:f.get('full_name')}}});msg($('#authMsg'),error?error.message:'Account created. Check your email if confirmation is enabled.',!error)});
+
+async function account(){
+  if(!$('#accountBox')||!isConfigured)return;
+  const s=await session();if(!s)return;
+  $('#guestBox')?.classList.add('hidden');$('#accountBox').classList.remove('hidden');$('#accountEmail').textContent=s.user.email;
+  const{data}=await supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').order('created_at',{ascending:false});
+  $('#orders').innerHTML=(data||[]).map(o=>`<tr><td>${o.order_number}</td><td class="status">${o.status}</td><td>${money(o.total)}</td><td>${new Date(o.created_at).toLocaleDateString()}</td><td>${o.due_at?new Date(o.due_at).toLocaleDateString():'—'}</td><td>${o.delivery_method||'—'}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>';
+}
 $('#logout')?.addEventListener('click',async()=>{await supabase.auth.signOut();location.reload()});
-const track=$('#trackForm');if(track)track.addEventListener('submit',async e=>{e.preventDefault();const s=await session(),m=$('#trackMsg');if(!s)return msg(m,'Please sign in first.',false);const n=new FormData(track).get('order_number');const{data,error}=await supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').eq('order_number',n).maybeSingle();if(error||!data)return msg(m,'Order not found in your account.',false);msg(m,`${data.order_number}: ${data.status} · ${money(data.total)} · Due ${data.due_at?new Date(data.due_at).toLocaleDateString():'TBC'}`)});
-async function admin(){const root=$('#adminRoot');if(!root||!isConfigured)return;const s=await session();if(!s)return root.innerHTML='<div class="notice">Sign in through Account first.</div>';const{data}=await supabase.rpc('is_current_user_admin');if(!data)return root.innerHTML='<div class="notice">This account is not an administrator.</div>';const q=await supabase.from('quote_requests').select('id,full_name,email,product,quantity,status,created_at').order('created_at',{ascending:false}).limit(50);root.innerHTML='<div class="panel"><h2>Latest quote requests</h2><table class="table"><thead><tr><th>ID</th><th>Customer</th><th>Product</th><th>Qty</th><th>Status</th></tr></thead><tbody>'+((q.data||[]).map(x=>`<tr><td>${x.id}</td><td>${x.full_name}<br><small>${x.email}</small></td><td>${x.product}</td><td>${x.quantity}</td><td>${x.status}</td></tr>`).join('')||'<tr><td colspan="5">No quotes.</td></tr>')+'</tbody></table></div>'}account();admin();
+
+const track=$('#trackForm');
+if(track)track.addEventListener('submit',async e=>{e.preventDefault();const s=await session(),m=$('#trackMsg');if(!s)return msg(m,'Please sign in first.',false);const n=new FormData(track).get('order_number');const{data,error}=await supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').eq('order_number',n).maybeSingle();if(error||!data)return msg(m,'Order not found in your account.',false);msg(m,`${data.order_number}: ${data.status} · ${money(data.total)} · Due ${data.due_at?new Date(data.due_at).toLocaleDateString():'TBC'}`)});
+
+async function admin(){
+  const root=$('#adminRoot');if(!root||!isConfigured)return;
+  const s=await session();if(!s)return root.innerHTML='<div class="notice">Sign in through Account first.</div>';
+  const{data}=await supabase.rpc('is_current_user_admin');if(!data)return root.innerHTML='<div class="notice">This account is not an administrator.</div>';
+  const q=await supabase.from('quote_requests').select('id,full_name,email,product,quantity,status,created_at').order('created_at',{ascending:false}).limit(50);
+  root.innerHTML='<div class="panel"><h2>Latest quote requests</h2><table class="table"><thead><tr><th>ID</th><th>Customer</th><th>Product</th><th>Qty</th><th>Status</th></tr></thead><tbody>'+((q.data||[]).map(x=>`<tr><td>${x.id}</td><td>${x.full_name}<br><small>${x.email}</small></td><td>${x.product}</td><td>${x.quantity}</td><td>${x.status}</td></tr>`).join('')||'<tr><td colspan="5">No quotes.</td></tr>')+'</tbody></table></div>';
+}
+account();admin();
