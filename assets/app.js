@@ -12,11 +12,22 @@ if(quote)quote.addEventListener('submit',async e=>{
   if(!isConfigured)return msg(m,'Supabase is not connected.',false);
   const fd=new FormData(quote),s=await session();
   const row={user_id:s?.user?.id||null,full_name:fd.get('full_name'),email:fd.get('email'),phone:fd.get('phone'),product:fd.get('product'),quantity:+fd.get('quantity'),size:fd.get('size'),paper:fd.get('paper'),print_sides:fd.get('print_sides'),finish:fd.get('finish'),design_service:fd.get('design_service')==='yes',notes:fd.get('notes')};
+  const input=$('#artwork'),files=[...(input?.files||[])];
+
+  if(!s){
+    const{error}=await supabase.from('quote_requests').insert(row);
+    if(error)return msg(m,error.message,false);
+    msg(m,files.length
+      ?'Quote request received. Your quote was saved; sign in if you also want to upload artwork securely.'
+      :'Quote request received. We will review the details and respond with pricing.');
+    quote.reset();
+    return;
+  }
+
   const{data,error}=await supabase.from('quote_requests').insert(row).select('id').single();
   if(error)return msg(m,error.message,false);
-  const input=$('#artwork'),files=[...(input?.files||[])];
-  if(files.length&&!s)return msg(m,'Quote #'+data.id+' received. Sign in to upload artwork securely; the quote itself has been saved.');
-  if(files.length&&s){
+
+  if(files.length){
     for(const file of files){
       const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_'),path=s.user.id+'/quotes/'+data.id+'/'+Date.now()+'-'+safe;
       const up=await supabase.storage.from('customer-files').upload(path,file,{upsert:false,contentType:file.type});
@@ -25,6 +36,7 @@ if(quote)quote.addEventListener('submit',async e=>{
       if(meta.error)return msg(m,'Quote #'+data.id+' saved, but file metadata failed: '+meta.error.message,false);
     }
   }
+
   msg(m,'Quote request #'+data.id+' received'+(files.length?' with artwork uploaded securely.':'.'));
   quote.reset();
 });
