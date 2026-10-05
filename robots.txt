@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /account.html
+Disallow: /track.html
+
+Sitemap: https://hskrc.github.io/Barlas-Print-Studio/sitemap.xml
