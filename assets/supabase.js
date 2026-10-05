@@ -1,0 +1,1 @@
+import{createClient}from'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm';const c=window.BPS_CONFIG||{};export const isConfigured=!!(c.supabaseUrl&&c.supabasePublishableKey);export const supabase=isConfigured?createClient(c.supabaseUrl,c.supabasePublishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
