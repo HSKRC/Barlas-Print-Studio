@@ -14,3 +14,5 @@
 
 .hp-field{position:absolute!important;left:-99999px!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important}
 .claim-panel{background:#fafafa}.claim-panel .inline-form input{flex:1;min-width:180px;padding:12px;border:1px solid #ccc;border-radius:9px;font:inherit}
+
+.quote-action-row{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 14px}.quote-summary{margin-top:12px}.quote-reply-cell{min-width:240px;white-space:pre-wrap}.account-quotes{min-width:980px}
