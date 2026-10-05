@@ -16,60 +16,95 @@ security invoker
 set search_path = ''
 as $$
 declare
-  v_quote public.quote_requests%rowtype;
-  v_order public.orders%rowtype;
+  q public.quote_requests%rowtype;
+  v_order_id uuid;
+  v_order_number text;
+  v_existing public.orders%rowtype;
+  v_subtotal numeric := greatest(coalesce(p_subtotal,0),0);
+  v_gst numeric := greatest(coalesce(p_gst,0),0);
 begin
   if not private.is_current_user_admin() then
-    raise exception 'Administrator access required';
+    raise exception 'Not authorized';
   end if;
 
-  select * into v_quote
-  from public.quote_requests
-  where id = p_quote_id
-  for update;
+  select *
+    into q
+    from public.quote_requests
+   where id = p_quote_id
+   for update;
 
-  if not found then raise exception 'Quote not found'; end if;
-  if v_quote.user_id is null then raise exception 'Customer account required'; end if;
+  if not found then
+    raise exception 'Quote not found';
+  end if;
 
-  select * into v_order
-  from public.orders
-  where quote_id = p_quote_id;
+  if q.user_id is null then
+    raise exception 'Customer account required before converting this quote to an order';
+  end if;
+
+  select *
+    into v_existing
+    from public.orders
+   where quote_id = p_quote_id
+   limit 1;
 
   if found then
-    return query select v_order.id, v_order.order_number;
+    return query select v_existing.id, v_existing.order_number;
     return;
   end if;
 
   insert into public.orders(
-    user_id, quote_id, status, subtotal, gst, total, delivery_method, due_at
+    order_number,
+    user_id,
+    quote_id,
+    status,
+    subtotal,
+    gst,
+    total,
+    delivery_method,
+    due_at
   )
   values(
-    v_quote.user_id, v_quote.id, 'approved',
-    greatest(coalesce(p_subtotal,0),0),
-    greatest(coalesce(p_gst,0),0),
-    greatest(coalesce(p_subtotal,0),0)+greatest(coalesce(p_gst,0),0),
-    nullif(trim(p_delivery_method),''),
+    '',
+    q.user_id,
+    q.id,
+    'approved',
+    v_subtotal,
+    v_gst,
+    v_subtotal + v_gst,
+    nullif(btrim(coalesce(p_delivery_method,'')),''),
     p_due_at
   )
-  returning * into v_order;
+  returning id, public.orders.order_number
+  into v_order_id, v_order_number;
 
   insert into public.order_items(
-    order_id, product, description, quantity, unit_price, line_total
+    order_id,
+    product,
+    description,
+    quantity,
+    unit_price,
+    line_total
   )
   values(
-    v_order.id,
-    v_quote.product,
-    concat_ws(' · ',nullif(v_quote.size,''),nullif(v_quote.paper,''),nullif(v_quote.print_sides,''),nullif(v_quote.finish,'')),
-    v_quote.quantity,
-    case when v_quote.quantity > 0 then greatest(coalesce(p_subtotal,0),0)/v_quote.quantity else 0 end,
-    greatest(coalesce(p_subtotal,0),0)
+    v_order_id,
+    q.product,
+    concat_ws(' · ',
+      nullif(q.size,''),
+      nullif(q.paper,''),
+      nullif(q.print_sides,''),
+      nullif(q.finish,'')
+    ),
+    q.quantity,
+    case when q.quantity > 0 then round(v_subtotal / q.quantity, 2) else 0 end,
+    v_subtotal
   );
 
   update public.quote_requests
-  set status='converted', updated_at=now()
-  where id=p_quote_id;
+     set status = 'converted',
+         updated_at = now()
+   where id = q.id;
 
-  return query select v_order.id, v_order.order_number;
+  return query select v_order_id, v_order_number;
 end;
 $$;
 
