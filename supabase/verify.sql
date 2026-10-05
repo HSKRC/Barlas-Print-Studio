@@ -1,0 +1,2 @@
+select schemaname,tablename,rowsecurity from pg_tables where schemaname='public' and tablename in ('profiles','quote_requests','quote_files','orders','order_items') order by tablename;
+select schemaname,tablename,policyname,roles,cmd from pg_policies where schemaname in ('public','storage') and tablename in ('profiles','quote_requests','quote_files','orders','order_items','objects') order by schemaname,tablename,policyname;
