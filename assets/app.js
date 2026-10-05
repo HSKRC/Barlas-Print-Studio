@@ -5,6 +5,12 @@ const msg=(el,t,ok=true)=>{if(el){el.textContent=t;el.style.borderLeftColor=ok?'
 const accountUrl=()=>new URL('account.html',location.href).href.split('?')[0].split('#')[0];
 async function session(){return isConfigured?(await supabase.auth.getSession()).data.session:null}
 
+const requestedService=new URLSearchParams(location.search).get('service');
+if(requestedService&&$('#quoteForm [name="product"]')){
+  const sel=$('#quoteForm [name="product"]');
+  if([...sel.options].some(o=>o.value===requestedService))sel.value=requestedService;
+}
+
 const quote=$('#quoteForm');
 if(quote)quote.addEventListener('submit',async e=>{
   e.preventDefault();
