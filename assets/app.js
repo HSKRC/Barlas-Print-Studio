@@ -118,10 +118,10 @@ async function account(){
   $('#accountBox').classList.remove('hidden');
   $('#accountEmail').textContent=s.user.email;
   const[q,o]=await Promise.all([
-    supabase.from('quote_requests').select('id,product,quantity,status,created_at').order('created_at',{ascending:false}),
+    supabase.from('quote_requests').select('id,product,quantity,status,created_at,quoted_total,quoted_delivery,quote_message,quote_valid_until,quoted_at').order('created_at',{ascending:false}),
     supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').order('created_at',{ascending:false})
   ]);
-  $('#quotes').innerHTML=(q.data||[]).map(x=>`<tr><td>#${x.id}</td><td>${x.product.replaceAll('_',' ')}</td><td>${x.quantity}</td><td class="status">${x.status.replaceAll('_',' ')}</td><td>${new Date(x.created_at).toLocaleDateString()}</td></tr>`).join('')||'<tr><td colspan="5">No quote requests linked to this account.</td></tr>';
+  $('#quotes').innerHTML=(q.data||[]).map(x=>`<tr><td>#${x.id}</td><td>${x.product.replaceAll('_',' ')}</td><td>${x.quantity}</td><td class="status">${x.status.replaceAll('_',' ')}</td><td>${x.quoted_total!=null?money(x.quoted_total):'—'}</td><td>${x.quoted_delivery||'—'}</td><td>${x.quote_valid_until?new Date(x.quote_valid_until+'T00:00:00').toLocaleDateString():'—'}</td><td class="quote-reply-cell">${x.quote_message?x.quote_message:'Awaiting response'}</td></tr>`).join('')||'<tr><td colspan="8">No quote requests linked to this account.</td></tr>';
   $('#orders').innerHTML=(o.data||[]).map(x=>`<tr><td>${x.order_number}</td><td class="status">${x.status.replaceAll('_',' ')}</td><td>${money(x.total)}</td><td>${new Date(x.created_at).toLocaleDateString()}</td><td>${x.due_at?new Date(x.due_at).toLocaleDateString():'—'}</td><td>${x.delivery_method||'—'}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>';
 }
 const claimQuote=$('#claimQuoteForm');
