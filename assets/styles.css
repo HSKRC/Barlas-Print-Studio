@@ -28,3 +28,7 @@
 
 /* Products & services */
 .products-hero p{max-width:760px;font-size:18px;color:#ddd}.product-title{font-size:clamp(30px,4vw,44px);line-height:1.08;margin:.3em 0 28px}.product-card{display:block;min-height:220px;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.product-card:hover{transform:translateY(-4px);border-color:#111;box-shadow:0 14px 32px rgba(0,0,0,.07)}.product-card>span{font-size:12px;font-weight:900;opacity:.4}.product-card h3{font-size:21px;margin:14px 0 8px}.product-card p{color:#555}.product-card b{display:block;margin-top:18px;font-size:13px}.corporate .btn{white-space:nowrap}
+
+/* Pricing and remaining site polish */
+.pricing-note{display:flex;align-items:center;gap:18px;padding:20px 22px;border:1px solid var(--b);border-radius:16px;margin-bottom:28px;background:#fafafa}.pricing-note span{flex:1;color:#555}.pricing-grid .card{min-height:190px}.pricing-grid .price{font-size:22px;margin:10px 0}.price-factors{margin-top:20px}.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.contact-grid .panel{min-height:245px}.gallery-cta{margin-top:35px;border:1px solid var(--b);border-radius:20px;padding:30px}.gallery-card>span{font-size:11px;font-weight:900;letter-spacing:.12em}.gallery-card h2{margin-top:55px}.cmyk-mock{background:linear-gradient(135deg,#00b8e6 0 33%,#e6007e 33% 66%,#ffd400 66%);color:#111}
+@media(max-width:850px){.pricing-note{align-items:flex-start;flex-direction:column}.contact-grid{grid-template-columns:1fr}}
