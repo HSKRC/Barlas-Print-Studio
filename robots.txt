@@ -4,4 +4,4 @@ Disallow: /admin.html
 Disallow: /account.html
 Disallow: /track.html
 
-Sitemap: https://hskrc.github.io/Barlas-Print-Studio/sitemap.xml
+Sitemap: https://barlasprintstudio.com.au/sitemap.xml
