@@ -121,7 +121,19 @@ async function account(){
     supabase.from('quote_requests').select('id,product,quantity,status,created_at,quoted_total,quoted_delivery,quote_message,quote_valid_until,quoted_at').order('created_at',{ascending:false}),
     supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').order('created_at',{ascending:false})
   ]);
-  $('#quotes').innerHTML=(q.data||[]).map(x=>`<tr><td>#${x.id}</td><td>${x.product.replaceAll('_',' ')}</td><td>${x.quantity}</td><td class="status">${x.status.replaceAll('_',' ')}</td><td>${x.quoted_total!=null?money(x.quoted_total):'—'}</td><td>${x.quoted_delivery||'—'}</td><td>${x.quote_valid_until?new Date(x.quote_valid_until+'T00:00:00').toLocaleDateString():'—'}</td><td class="quote-reply-cell">${x.quote_message?x.quote_message:'Awaiting response'}</td></tr>`).join('')||'<tr><td colspan="8">No quote requests linked to this account.</td></tr>';
+  $('#quotes').innerHTML=(q.data||[]).map(x=>`<article class="customer-quote-card">
+  <div class="cq-head"><div><strong>Barlas Print Studio</strong><span>QUOTE #${x.id}</span></div><span class="pill status-${x.status}">${x.status.replaceAll('_',' ')}</span></div>
+  <div class="cq-body">
+    <div class="cq-grid">
+      <div><small>Product</small><b>${x.product.replaceAll('_',' ')}</b></div>
+      <div><small>Quantity</small><b>${x.quantity}</b></div>
+      <div><small>Delivery / Turnaround</small><b>${x.quoted_delivery||'TBC'}</b></div>
+      <div><small>Valid until</small><b>${x.quote_valid_until?new Date(x.quote_valid_until+'T00:00:00').toLocaleDateString():'TBC'}</b></div>
+    </div>
+    <div class="cq-message">${x.quote_message||'Your quote request is being reviewed.'}</div>
+    <div class="cq-total"><span>Quoted Total</span><strong>${x.quoted_total!=null?money(x.quoted_total):'Pending'}</strong></div>
+  </div>
+</article>`).join('')||'<div class="notice">No quote requests linked to this account.</div>';
   $('#orders').innerHTML=(o.data||[]).map(x=>`<tr><td>${x.order_number}</td><td class="status">${x.status.replaceAll('_',' ')}</td><td>${money(x.total)}</td><td>${new Date(x.created_at).toLocaleDateString()}</td><td>${x.due_at?new Date(x.due_at).toLocaleDateString():'—'}</td><td>${x.delivery_method||'—'}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>';
 }
 const claimQuote=$('#claimQuoteForm');
