@@ -1,5 +1,14 @@
 import{supabase,isConfigured}from'./supabase.js';
-const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],money=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(+n||0);
+const $=(s,r=document)=>r.querySelector(s),$=(s,r=document)=>[...r.querySelectorAll(s)],money=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(+n||0);
+const payment=window.BPS_CONFIG?.payment||{};
+const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const paymentInstructions=invoice=>{
+  if(invoice.status==='paid')return '<div class="notice"><strong>Payment received.</strong> Thank you.</div>';
+  const methods=[];
+  if(payment.bankTransferEnabled&&payment.bankName&&payment.accountName&&payment.bsb&&payment.accountNumber)methods.push(`<div><strong>Bank Transfer</strong><br>Bank: ${esc(payment.bankName)}<br>Account name: ${esc(payment.accountName)}<br>BSB: ${esc(payment.bsb)}<br>Account: ${esc(payment.accountNumber)}</div>`);
+  if(payment.payIdEnabled&&payment.payId)methods.push(`<div><strong>PayID</strong><br>${esc(payment.payId)}</div>`);
+  return methods.length?`<div class="notice payment-instructions"><strong>Payment options</strong><p>Use <b>${esc(invoice.invoice_number)}</b> as your payment reference.</p>${methods.join('<br>')}<p>Payment status is updated after the transfer is verified.</p></div>`:'';
+};
 $$('.year').forEach(x=>x.textContent=new Date().getFullYear());
 const msg=(el,t,ok=true)=>{if(el){el.textContent=t;el.style.borderLeftColor=ok?'#00b8e6':'#e6007e'}};
 const accountUrl=()=>new URL('account.html',location.href).href.split('?')[0].split('#')[0];
@@ -138,7 +147,7 @@ async function account(){
   </div>
 </article>`).join('')||'<div class="notice">No quote requests linked to this account.</div>';
   $('#orders').innerHTML=(o.data||[]).map(x=>`<tr><td>${x.order_number}</td><td class="status">${x.status.replaceAll('_',' ')}</td><td>${money(x.total)}</td><td>${new Date(x.created_at).toLocaleDateString()}</td><td>${x.due_at?new Date(x.due_at).toLocaleDateString():'—'}</td><td>${x.delivery_method||'—'}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>';
-  $('#invoices').innerHTML=(i.data||[]).map(x=>`<article class="customer-quote-card"><div class="cq-head"><div><strong>Barlas Print Studio</strong><span>${x.invoice_number}</span></div><span class="pill status-${x.status}">${x.status}</span></div><div class="cq-body"><div class="cq-grid"><div><small>Order</small><b>${x.order_number}</b></div><div><small>Issue date</small><b>${new Date(x.issue_date+'T00:00:00').toLocaleDateString()}</b></div><div><small>Due date</small><b>${x.due_date?new Date(x.due_date+'T00:00:00').toLocaleDateString():'TBC'}</b></div><div><small>ABN</small><b>50 393 779 735</b></div></div><div class="cq-message">${x.notes||'Invoice issued for your order.'}</div><div class="cq-total"><span>Total</span><strong>${money(x.total)}</strong></div></div></article>`).join('')||'<div class="notice">No invoices yet.</div>';
+  $('#invoices').innerHTML=(i.data||[]).map(x=>`<article class="customer-quote-card"><div class="cq-head"><div><strong>Barlas Print Studio</strong><span>${x.invoice_number}</span></div><span class="pill status-${x.status}">${x.status}</span></div><div class="cq-body"><div class="cq-grid"><div><small>Order</small><b>${x.order_number}</b></div><div><small>Issue date</small><b>${new Date(x.issue_date+'T00:00:00').toLocaleDateString()}</b></div><div><small>Due date</small><b>${x.due_date?new Date(x.due_date+'T00:00:00').toLocaleDateString():'TBC'}</b></div><div><small>ABN</small><b>50 393 779 735</b></div></div><div class="cq-message">${x.notes||'Invoice issued for your order.'}</div><div class="cq-total"><span>Total</span><strong>${money(x.total)}</strong></div>${paymentInstructions(x)}</div></article>`).join('')||'<div class="notice">No invoices yet.</div>';
 }
 const claimQuote=$('#claimQuoteForm');
 if(claimQuote)claimQuote.addEventListener('submit',async e=>{
