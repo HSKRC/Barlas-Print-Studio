@@ -42,3 +42,36 @@ create policy "customer_files_delete_own_or_admin" on storage.objects for delete
 create index if not exists quote_requests_user_created_idx on public.quote_requests(user_id,created_at desc);create index if not exists quote_requests_status_created_idx on public.quote_requests(status,created_at desc);create index if not exists orders_user_created_idx on public.orders(user_id,created_at desc);create index if not exists orders_status_created_idx on public.orders(status,created_at desc);create index if not exists order_items_order_idx on public.order_items(order_id);create index if not exists orders_quote_id_idx on public.orders(quote_id);create index if not exists quote_files_quote_id_idx on public.quote_files(quote_id);create index if not exists quote_files_user_id_idx on public.quote_files(user_id);
 -- After creating your own Auth account:
 -- insert into private.admins(user_id) values('YOUR-AUTH-USER-UUID');
+
+-- Guest quote validation (kept in sync with the product list exposed by quote.html)
+create or replace function private.enforce_guest_quote_limits()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.quantity < 1 or new.quantity > 1000000 then raise exception 'Invalid quantity'; end if;
+  if char_length(new.full_name) > 120
+     or char_length(new.email) > 254
+     or char_length(coalesce(new.phone,'')) > 50
+     or char_length(coalesce(new.size,'')) > 120
+     or char_length(coalesce(new.paper,'')) > 120
+     or char_length(coalesce(new.finish,'')) > 120
+     or char_length(coalesce(new.notes,'')) > 5000 then
+    raise exception 'Quote field is too long';
+  end if;
+  if new.email !~* '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$' then raise exception 'Invalid email address'; end if;
+  if new.product not in ('flyer','brochure','card','apparel','mug','poster','stickers','banner','vinyl','window_graphics','one_way_vision','frosted_film','signage','stationery','design','website') then
+    raise exception 'Invalid product';
+  end if;
+  if (select auth.role())='anon' then
+    if (select count(*) from public.quote_requests q where lower(q.email)=lower(new.email) and q.created_at > now()-interval '1 hour') >= 5 then
+      raise exception 'Too many quote requests. Please try again later.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists quote_requests_guest_limit_trg on public.quote_requests;
+create trigger quote_requests_guest_limit_trg before insert on public.quote_requests for each row execute function private.enforce_guest_quote_limits();

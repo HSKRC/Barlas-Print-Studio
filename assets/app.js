@@ -129,7 +129,7 @@ async function account(){
   $('#accountBox').classList.remove('hidden');
   $('#accountEmail').textContent=s.user.email;
   const[q,o,i]=await Promise.all([
-    supabase.from('quote_requests').select('id,product,quantity,status,created_at,quoted_total,quoted_delivery,quote_message,quote_valid_until,quoted_at').order('created_at',{ascending:false}),
+    supabase.from('quote_requests').select('id,product,quantity,status,created_at,quoted_total,quoted_delivery_fee,quoted_turnaround,quoted_delivery,quote_message,quote_valid_until,quoted_at').order('created_at',{ascending:false}),
     supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').order('created_at',{ascending:false}),
     supabase.from('invoices').select('invoice_number,order_number,status,issue_date,due_date,total,notes').order('created_at',{ascending:false})
   ]);
@@ -139,7 +139,7 @@ async function account(){
     <div class="cq-grid">
       <div><small>Product</small><b>${x.product.replaceAll('_',' ')}</b></div>
       <div><small>Quantity</small><b>${x.quantity}</b></div>
-      <div><small>Delivery / Turnaround</small><b>${x.quoted_delivery||'TBC'}</b></div>
+      <div><small>Turnaround</small><b>${x.quoted_turnaround||x.quoted_delivery||'TBC'}</b></div>\n      <div><small>Delivery fee</small><b>${money(x.quoted_delivery_fee||0)}</b></div>
       <div><small>Valid until</small><b>${x.quote_valid_until?new Date(x.quote_valid_until+'T00:00:00').toLocaleDateString():'TBC'}</b></div>
     </div>
     <div class="cq-message">${x.quote_message||'Your quote request is being reviewed.'}</div>
