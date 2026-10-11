@@ -152,7 +152,7 @@ async function account(){
   $('#accountBox').classList.remove('hidden');
   $('#accountEmail').textContent=s.user.email;
   const[q,o,i]=await Promise.all([
-    supabase.from('quote_requests').select('id,product,quantity,status,created_at,quoted_total,quoted_delivery_fee,quoted_turnaround,quoted_delivery,quote_message,quote_valid_until,quoted_at').order('created_at',{ascending:false}),
+    supabase.from('quote_requests').select('id,product,quantity,status,created_at,quoted_total,quoted_delivery_fee,quoted_turnaround,quoted_delivery,quote_message,quote_valid_until,quoted_at,deposit_percent,deposit_amount,deposit_status,customer_responded_at').order('created_at',{ascending:false}),
     supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').order('created_at',{ascending:false}),
     supabase.from('invoices').select('invoice_number,order_number,status,issue_date,due_date,total,notes').order('created_at',{ascending:false})
   ]);
@@ -167,11 +167,22 @@ async function account(){
     </div>
     <div class="cq-message">${esc(x.quote_message||'Your quote request is being reviewed.')}</div>
     <div class="cq-total"><span>Quoted Total</span><strong>${x.quoted_total!=null?money(x.quoted_total):'Pending'}</strong></div>
+    ${x.status==='quoted'&&x.quoted_total!=null?'<div class="quote-action-row"><button class="btn cmyk" data-quote-respond="accept" data-quote-id="'+esc(x.id)+'">Accept Quote</button><button class="btn" data-quote-respond="decline" data-quote-id="'+esc(x.id)+'">Decline Quote</button></div><small>Production begins only after deposit payment is confirmed.</small>':''}
+    ${x.status==='accepted'?'<div class="notice">Deposit due: '+money(x.deposit_amount||0)+' ('+esc(x.deposit_percent||0)+'%). Payment status: '+esc(x.deposit_status||'awaiting_payment')+'</div>':''}
   </div>
 </article>`).join('')||'<div class="notice">No quote requests linked to this account.</div>';
   $('#orders').innerHTML=(o.data||[]).map(x=>`<tr><td>${esc(x.order_number)}</td><td class="status">${esc(String(x.status||'').replaceAll('_',' '))}</td><td>${money(x.total)}</td><td>${new Date(x.created_at).toLocaleDateString()}</td><td>${x.due_at?new Date(x.due_at).toLocaleDateString():'—'}</td><td>${esc(x.delivery_method||'—')}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>';
   $('#invoices').innerHTML=(i.data||[]).map(x=>`<article class="customer-quote-card"><div class="cq-head"><div><strong>Barlas Print Studio</strong><span>${esc(x.invoice_number)}</span></div><span class="pill status-${esc(x.status)}">${esc(x.status)}</span></div><div class="cq-body"><div class="cq-grid"><div><small>Order</small><b>${esc(x.order_number)}</b></div><div><small>Issue date</small><b>${new Date(x.issue_date+'T00:00:00').toLocaleDateString()}</b></div><div><small>Due date</small><b>${x.due_date?new Date(x.due_date+'T00:00:00').toLocaleDateString():'TBC'}</b></div><div><small>ABN</small><b>50 393 779 735</b></div></div><div class="cq-message">${esc(x.notes||'Invoice issued for your order.')}</div><div class="cq-total"><span>Total</span><strong>${money(x.total)}</strong></div>${paymentInstructions(x)}</div></article>`).join('')||'<div class="notice">No invoices yet.</div>';
 }
+$('#quotes')?.addEventListener('click',async e=>{
+  const btn=e.target.closest('[data-quote-respond]');if(!btn)return;
+  const accept=btn.dataset.quoteRespond==='accept';
+  if(!confirm(accept?'Accept this quote and its deposit terms?':'Decline this quote?'))return;
+  btn.disabled=true;
+  const {error}=await supabase.rpc('respond_to_quote',{p_quote_id:Number(btn.dataset.quoteId),p_accept:accept});
+  if(error){alert(error.message);btn.disabled=false;return;}
+  await account();
+});
 const claimQuote=$('#claimQuoteForm');
 if(claimQuote)claimQuote.addEventListener('submit',async e=>{
   e.preventDefault();
