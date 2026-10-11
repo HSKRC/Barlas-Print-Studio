@@ -138,20 +138,20 @@ async function account(){
     supabase.from('invoices').select('invoice_number,order_number,status,issue_date,due_date,total,notes').order('created_at',{ascending:false})
   ]);
   $('#quotes').innerHTML=(q.data||[]).map(x=>`<article class="customer-quote-card">
-  <div class="cq-head"><div><strong>Barlas Print Studio</strong><span>QUOTE #${x.id}</span></div><span class="pill status-${x.status}">${x.status.replaceAll('_',' ')}</span></div>
+  <div class="cq-head"><div><strong>Barlas Print Studio</strong><span>QUOTE #${esc(x.id)}</span></div><span class="pill status-${esc(x.status)}">${esc(String(x.status||'').replaceAll('_',' '))}</span></div>
   <div class="cq-body">
     <div class="cq-grid">
-      <div><small>Product</small><b>${x.product.replaceAll('_',' ')}</b></div>
-      <div><small>Quantity</small><b>${x.quantity}</b></div>
-      <div><small>Turnaround</small><b>${x.quoted_turnaround||x.quoted_delivery||'TBC'}</b></div>\n      <div><small>Delivery fee</small><b>${money(x.quoted_delivery_fee||0)}</b></div>
+      <div><small>Product</small><b>${esc(String(x.product||'').replaceAll('_',' '))}</b></div>
+      <div><small>Quantity</small><b>${esc(x.quantity)}</b></div>
+      <div><small>Turnaround</small><b>${esc(x.quoted_turnaround||x.quoted_delivery||'TBC')}</b></div>\n      <div><small>Delivery fee</small><b>${money(x.quoted_delivery_fee||0)}</b></div>
       <div><small>Valid until</small><b>${x.quote_valid_until?new Date(x.quote_valid_until+'T00:00:00').toLocaleDateString():'TBC'}</b></div>
     </div>
-    <div class="cq-message">${x.quote_message||'Your quote request is being reviewed.'}</div>
+    <div class="cq-message">${esc(x.quote_message||'Your quote request is being reviewed.')}</div>
     <div class="cq-total"><span>Quoted Total</span><strong>${x.quoted_total!=null?money(x.quoted_total):'Pending'}</strong></div>
   </div>
 </article>`).join('')||'<div class="notice">No quote requests linked to this account.</div>';
-  $('#orders').innerHTML=(o.data||[]).map(x=>`<tr><td>${x.order_number}</td><td class="status">${x.status.replaceAll('_',' ')}</td><td>${money(x.total)}</td><td>${new Date(x.created_at).toLocaleDateString()}</td><td>${x.due_at?new Date(x.due_at).toLocaleDateString():'—'}</td><td>${x.delivery_method||'—'}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>';
-  $('#invoices').innerHTML=(i.data||[]).map(x=>`<article class="customer-quote-card"><div class="cq-head"><div><strong>Barlas Print Studio</strong><span>${x.invoice_number}</span></div><span class="pill status-${x.status}">${x.status}</span></div><div class="cq-body"><div class="cq-grid"><div><small>Order</small><b>${x.order_number}</b></div><div><small>Issue date</small><b>${new Date(x.issue_date+'T00:00:00').toLocaleDateString()}</b></div><div><small>Due date</small><b>${x.due_date?new Date(x.due_date+'T00:00:00').toLocaleDateString():'TBC'}</b></div><div><small>ABN</small><b>50 393 779 735</b></div></div><div class="cq-message">${x.notes||'Invoice issued for your order.'}</div><div class="cq-total"><span>Total</span><strong>${money(x.total)}</strong></div>${paymentInstructions(x)}</div></article>`).join('')||'<div class="notice">No invoices yet.</div>';
+  $('#orders').innerHTML=(o.data||[]).map(x=>`<tr><td>${esc(x.order_number)}</td><td class="status">${esc(String(x.status||'').replaceAll('_',' '))}</td><td>${money(x.total)}</td><td>${new Date(x.created_at).toLocaleDateString()}</td><td>${x.due_at?new Date(x.due_at).toLocaleDateString():'—'}</td><td>${esc(x.delivery_method||'—')}</td></tr>`).join('')||'<tr><td colspan="6">No orders yet.</td></tr>';
+  $('#invoices').innerHTML=(i.data||[]).map(x=>`<article class="customer-quote-card"><div class="cq-head"><div><strong>Barlas Print Studio</strong><span>${esc(x.invoice_number)}</span></div><span class="pill status-${esc(x.status)}">${esc(x.status)}</span></div><div class="cq-body"><div class="cq-grid"><div><small>Order</small><b>${esc(x.order_number)}</b></div><div><small>Issue date</small><b>${new Date(x.issue_date+'T00:00:00').toLocaleDateString()}</b></div><div><small>Due date</small><b>${x.due_date?new Date(x.due_date+'T00:00:00').toLocaleDateString():'TBC'}</b></div><div><small>ABN</small><b>50 393 779 735</b></div></div><div class="cq-message">${esc(x.notes||'Invoice issued for your order.')}</div><div class="cq-total"><span>Total</span><strong>${money(x.total)}</strong></div>${paymentInstructions(x)}</div></article>`).join('')||'<div class="notice">No invoices yet.</div>';
 }
 const claimQuote=$('#claimQuoteForm');
 if(claimQuote)claimQuote.addEventListener('submit',async e=>{
