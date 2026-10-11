@@ -38,3 +38,8 @@
 
 /* Accessible navigation on smaller screens: keep page links visible and scrollable. */
 @media(max-width:850px){.nav{flex-wrap:wrap;gap:10px}.nav .links{display:flex;order:3;width:100%;overflow-x:auto;white-space:nowrap;gap:14px;padding:10px 0;scrollbar-width:thin}.nav .links a{flex-shrink:0}}
+
+/* Cookie consent */
+.cookie-consent{position:fixed;z-index:9999;bottom:20px;left:50%;transform:translateX(-50%);width:min(940px,calc(100% - 28px));display:flex;align-items:center;justify-content:space-between;gap:22px;background:#fff;color:#111;border:1px solid #d8d8d8;border-radius:16px;padding:20px 24px;box-shadow:0 14px 45px #0003}
+.cookie-consent strong{font-size:17px}.cookie-consent p{margin:6px 0 0;font-size:13px;line-height:1.6;color:#444}.cookie-consent a{color:#111;text-decoration:underline}.cookie-actions{display:flex;gap:10px;flex-shrink:0}.cookie-actions .btn{white-space:nowrap;font-size:12px}
+@media(max-width:700px){.cookie-consent{flex-direction:column;align-items:stretch;bottom:10px;padding:16px}.cookie-actions{flex-wrap:wrap}.cookie-actions .btn{flex:1}}
