@@ -32,3 +32,6 @@
 /* Pricing and remaining site polish */
 .pricing-note{display:flex;align-items:center;gap:18px;padding:20px 22px;border:1px solid var(--b);border-radius:16px;margin-bottom:28px;background:#fafafa}.pricing-note span{flex:1;color:#555}.pricing-grid .card{min-height:190px}.pricing-grid .price{font-size:22px;margin:10px 0}.price-factors{margin-top:20px}.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.contact-grid .panel{min-height:245px}.gallery-cta{margin-top:35px;border:1px solid var(--b);border-radius:20px;padding:30px}.gallery-card>span{font-size:11px;font-weight:900;letter-spacing:.12em}.gallery-card h2{margin-top:55px}.cmyk-mock{background:linear-gradient(135deg,#00b8e6 0 33%,#e6007e 33% 66%,#ffd400 66%);color:#111}
 @media(max-width:850px){.pricing-note{align-items:flex-start;flex-direction:column}.contact-grid{grid-template-columns:1fr}}
+
+/* Hero headline: use solid black instead of gradient */
+.hero h1 span{background:none;-webkit-background-clip:initial;background-clip:initial;color:#111;-webkit-text-fill-color:#111}
