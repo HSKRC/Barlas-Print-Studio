@@ -35,3 +35,6 @@
 
 /* Hero headline: use solid black instead of gradient */
 .hero h1 span{background:none;-webkit-background-clip:initial;background-clip:initial;color:#111;-webkit-text-fill-color:#111}
+
+/* Accessible navigation on smaller screens: keep page links visible and scrollable. */
+@media(max-width:850px){.nav{flex-wrap:wrap;gap:10px}.nav .links{display:flex;order:3;width:100%;overflow-x:auto;white-space:nowrap;gap:14px;padding:10px 0;scrollbar-width:thin}.nav .links a{flex-shrink:0}}
