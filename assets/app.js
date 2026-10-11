@@ -179,3 +179,24 @@ if(track)track.addEventListener('submit',async e=>{
 });
 
 account();
+/* Cookie preferences: essential storage is always active; optional cookies require consent. */
+(function cookiePreferences(){
+  const key='bps-cookie-consent-v1';
+  let choice=null;
+  try{choice=localStorage.getItem(key)}catch(_){}
+  if(choice==='accepted'||choice==='rejected')return;
+  const banner=document.createElement('aside');
+  banner.className='cookie-consent';
+  banner.setAttribute('role','dialog');
+  banner.setAttribute('aria-label','Cookie preferences');
+  banner.innerHTML='<div><strong>Your privacy matters</strong><p>We use essential cookies and local storage to keep customer accounts and the website working. Optional analytics or marketing cookies will only be used if you accept. <a href="privacy.html">Privacy Policy</a></p></div><div class="cookie-actions"><button type="button" class="btn dark" data-cookie-choice="accepted">Accept optional cookies</button><button type="button" class="btn" data-cookie-choice="rejected">Essential only</button></div>';
+  banner.addEventListener('click',event=>{
+    const btn=event.target.closest('[data-cookie-choice]');
+    if(!btn)return;
+    const value=btn.getAttribute('data-cookie-choice');
+    try{localStorage.setItem(key,value)}catch(_){}
+    window.dispatchEvent(new CustomEvent('bps:cookie-consent',{detail:{optional:value==='accepted'}}));
+    banner.remove();
+  });
+  document.body.appendChild(banner);
+})();
