@@ -22,15 +22,29 @@ if(requestedService&&$('#quoteForm [name="product"]')){
   if([...sel.options].some(o=>o.value===requestedService))sel.value=requestedService;
 }
 
+
+const needsDeliveryInput=$('#needsDelivery'),deliveryAddressGroup=$('#deliveryAddressGroup'),deliveryAddressInput=$('#deliveryAddress');
+function syncDeliveryChoice(){
+  if(!needsDeliveryInput||!deliveryAddressGroup||!deliveryAddressInput)return;
+  const enabled=needsDeliveryInput.checked;
+  deliveryAddressGroup.classList.toggle('hidden',!enabled);
+  deliveryAddressInput.disabled=!enabled;
+  deliveryAddressInput.required=enabled;
+  if(!enabled)deliveryAddressInput.value='';
+}
+needsDeliveryInput?.addEventListener('change',syncDeliveryChoice);
+syncDeliveryChoice();
+
 const quote=$('#quoteForm');
 if(quote)quote.addEventListener('submit',async e=>{
   e.preventDefault();
   const m=$('#quoteMsg');
   if(!isConfigured)return msg(m,'Supabase is not connected.',false);
   const fd=new FormData(quote),s=await session();
+  const needsDelivery=fd.get('needs_delivery')==='yes';
   const deliveryAddress=String(fd.get('delivery_address')||'').trim();
-  if(deliveryAddress.length<12)return msg(m,'Please enter your full delivery address, including street, suburb and postcode.',false);
-  const deliveryNotes='Delivery address: '+deliveryAddress+'\n\n'+String(fd.get('notes')||'');
+  if(needsDelivery&&deliveryAddress.length<12)return msg(m,'Please enter your full delivery address, including street, suburb and postcode.',false);
+  const deliveryNotes=(needsDelivery?'Fulfilment: Delivery\nDelivery address: '+deliveryAddress:'Fulfilment: Customer pickup at studio')+'\n\n'+String(fd.get('notes')||'');
   const row={user_id:s?.user?.id||null,full_name:fd.get('full_name'),email:fd.get('email'),phone:fd.get('phone'),product:fd.get('product'),quantity:+fd.get('quantity'),size:fd.get('size'),paper:fd.get('paper'),print_sides:fd.get('print_sides'),finish:fd.get('finish'),design_service:fd.get('design_service')==='yes',notes:deliveryNotes};
   const input=$('#artwork'),files=[...(input?.files||[])];
   const allowedTypes=new Set(['application/pdf','image/jpeg','image/png']);
@@ -58,6 +72,7 @@ if(quote)quote.addEventListener('submit',async e=>{
       ?'Quote #'+data+' received. Save this quote number. Sign in and claim it from your account to upload artwork and track progress.'
       :'Quote #'+data+' received. Save this quote number so you can claim it later from your account.');
     quote.reset();
+    syncDeliveryChoice();
     return;
   }
 
@@ -76,6 +91,7 @@ if(quote)quote.addEventListener('submit',async e=>{
 
   msg(m,'Quote request #'+data.id+' received'+(files.length?' with artwork uploaded securely.':'.'));
   quote.reset();
+  syncDeliveryChoice();
 });
 
 const login=$('#loginForm');
