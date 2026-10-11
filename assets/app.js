@@ -30,6 +30,10 @@ if(quote)quote.addEventListener('submit',async e=>{
   const fd=new FormData(quote),s=await session();
   const row={user_id:s?.user?.id||null,full_name:fd.get('full_name'),email:fd.get('email'),phone:fd.get('phone'),product:fd.get('product'),quantity:+fd.get('quantity'),size:fd.get('size'),paper:fd.get('paper'),print_sides:fd.get('print_sides'),finish:fd.get('finish'),design_service:fd.get('design_service')==='yes',notes:fd.get('notes')};
   const input=$('#artwork'),files=[...(input?.files||[])];
+  const allowedTypes=new Set(['application/pdf','image/jpeg','image/png']);
+  if(files.some(file=>file.size>20*1024*1024))return msg(m,'Each artwork file must be 20 MB or smaller.',false);
+  if(files.some(file=>!allowedTypes.has(file.type)||!/\.(pdf|jpe?g|png)$/i.test(file.name)))return msg(m,'Only PDF, JPG and PNG artwork files are accepted.',false);
+  if(files.length&&!s)return msg(m,'Please sign in before uploading artwork, or remove the files to submit a guest quote.',false);
 
   if(!s){
     const{data,error}=await supabase.rpc('submit_guest_quote',{
