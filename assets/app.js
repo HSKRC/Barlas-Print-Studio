@@ -28,7 +28,10 @@ if(quote)quote.addEventListener('submit',async e=>{
   const m=$('#quoteMsg');
   if(!isConfigured)return msg(m,'Supabase is not connected.',false);
   const fd=new FormData(quote),s=await session();
-  const row={user_id:s?.user?.id||null,full_name:fd.get('full_name'),email:fd.get('email'),phone:fd.get('phone'),product:fd.get('product'),quantity:+fd.get('quantity'),size:fd.get('size'),paper:fd.get('paper'),print_sides:fd.get('print_sides'),finish:fd.get('finish'),design_service:fd.get('design_service')==='yes',notes:fd.get('notes')};
+  const deliveryAddress=String(fd.get('delivery_address')||'').trim();
+  if(deliveryAddress.length<12)return msg(m,'Please enter your full delivery address, including street, suburb and postcode.',false);
+  const deliveryNotes='Delivery address: '+deliveryAddress+'\n\n'+String(fd.get('notes')||'');
+  const row={user_id:s?.user?.id||null,full_name:fd.get('full_name'),email:fd.get('email'),phone:fd.get('phone'),product:fd.get('product'),quantity:+fd.get('quantity'),size:fd.get('size'),paper:fd.get('paper'),print_sides:fd.get('print_sides'),finish:fd.get('finish'),design_service:fd.get('design_service')==='yes',notes:deliveryNotes};
   const input=$('#artwork'),files=[...(input?.files||[])];
   const allowedTypes=new Set(['application/pdf','image/jpeg','image/png']);
   if(files.some(file=>file.size>20*1024*1024))return msg(m,'Each artwork file must be 20 MB or smaller.',false);
