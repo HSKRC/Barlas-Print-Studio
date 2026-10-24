@@ -269,11 +269,21 @@ async function account(){
   $('#resetRequestForm')?.classList.add('hidden');
   $('#accountBox').classList.remove('hidden');
   $('#accountEmail').textContent=s.user.email;
-  const[q,o,i]=await Promise.all([
+  const[q,o,i,creditAccount,creditRewards]=await Promise.all([
     supabase.from('quote_requests').select('id,product,quantity,status,created_at,quoted_total,quoted_delivery_fee,quoted_turnaround,quoted_delivery,quote_message,quote_valid_until,quoted_at,deposit_percent,deposit_amount,deposit_status,customer_responded_at').order('created_at',{ascending:false}),
     supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').order('created_at',{ascending:false}),
-    supabase.from('invoices').select('invoice_number,order_number,status,issue_date,due_date,total,notes').order('created_at',{ascending:false})
+    supabase.from('invoices').select('invoice_number,order_number,status,issue_date,due_date,total,notes').order('created_at',{ascending:false}),
+    supabase.from('print_credit_accounts').select('qualifying_spend').maybeSingle(),
+    supabase.from('print_credit_rewards').select('id,amount,issued_at,expires_at,redeemed_at').order('issued_at',{ascending:false})
   ]);
+  const spend=Number(creditAccount.data?.qualifying_spend||0);
+  const rewardRows=creditRewards.data||[];
+  const now=Date.now();
+  const available=rewardRows.filter(x=>!x.redeemed_at&&new Date(x.expires_at).getTime()>now);
+  const availableTotal=available.reduce((sum,x)=>sum+Number(x.amount||0),0);
+  const progress=Math.min(100,spend/12000*100);
+  const creditError=creditAccount.error||creditRewards.error;
+  $('#printCredit').innerHTML=`<div class="cq-head"><div><strong>Print credit</strong><span>LOYALTY REWARDS</span></div><strong>${money(availableTotal)}</strong></div><div class="cq-body">${creditError?'<div class="notice error">Credit status is temporarily unavailable. Please check again later.</div>':`<div class="cq-grid"><div><small>Eligible print spend accumulated</small><b>${money(spend)} of ${money(12000)}</b></div><div><small>Spend until next reward</small><b>${money(Math.max(0,12000-spend))}</b></div></div><div class="credit-progress" role="progressbar" aria-label="Progress to print credit" aria-valuemin="0" aria-valuemax="12000" aria-valuenow="${Math.round(spend)}"><span style="width:${progress}%"></span></div><p>Each ${money(12000)} of completed and paid print purchases earns ${money(200)} in print credit. After a reward is issued, eligible spend starts accumulating again. Each credit expires one year after issue. Credit applies to printing; delivery fees are separate.</p>${rewardRows.length?`<div class="credit-reward-list">${rewardRows.map(x=>{const state=x.redeemed_at?'Used':new Date(x.expires_at).getTime()<=now?'Expired':'Available';return `<div><span>${money(x.amount)} print credit · issued ${new Date(x.issued_at).toLocaleDateString()}</span><b>${state}${state==='Available'?' · expires '+new Date(x.expires_at).toLocaleDateString():''}</b></div>`}).join('')}</div>`:'<div class="notice">No print credits earned yet. Your eligible spend will appear here after a print order is completed and its invoice is paid.</div>'}`}</div>`;
   $('#quotes').innerHTML=(q.data||[]).map(x=>`<article class="customer-quote-card">
   <div class="cq-head"><div><strong>Barlas Print Studio</strong><span>QUOTE #${esc(x.id)}</span></div><span class="pill status-${esc(x.status)}">${esc(String(x.status||'').replaceAll('_',' '))}</span></div>
   <div class="cq-body">
