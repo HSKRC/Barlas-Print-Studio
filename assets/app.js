@@ -269,6 +269,9 @@ async function account(){
   $('#resetRequestForm')?.classList.add('hidden');
   $('#accountBox').classList.remove('hidden');
   $('#accountEmail').textContent=s.user.email;
+  const guestClaims=await supabase.rpc('claim_guest_quotes');
+  if(guestClaims.error)msg($('#authMsg'),'Could not link earlier guest quotes: '+guestClaims.error.message,false);
+  else if(Number(guestClaims.data)>0)msg($('#authMsg'),Number(guestClaims.data)+' earlier guest quote(s) linked to this account.',true);
   const[q,o,i,creditAccount,creditRewards]=await Promise.all([
     supabase.from('quote_requests').select('id,product,quantity,status,created_at,quoted_total,quoted_delivery_fee,quoted_turnaround,quoted_delivery,quote_message,quote_valid_until,quoted_at,deposit_percent,deposit_amount,deposit_status,customer_responded_at').order('created_at',{ascending:false}),
     supabase.from('orders').select('order_number,status,total,created_at,due_at,delivery_method').order('created_at',{ascending:false}),
