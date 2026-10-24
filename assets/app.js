@@ -23,15 +23,133 @@ if(requestedService&&$('#quoteForm [name="product"]')){
 }
 
 
-const needsDeliveryInput=$('#needsDelivery'),deliveryAddressGroup=$('#deliveryAddressGroup'),deliveryAddressInput=$('#deliveryAddress');
+const needsDeliveryInput=$('#needsDelivery'),deliveryAddressGroup=$('#deliveryAddressGroup'),deliveryAddressInput=$('#deliveryAddress'),deliveryAddressSearch=$('#deliveryAddressSearch'),deliveryAddressSuggestions=$('#deliveryAddressSuggestions'),deliveryAddressStatus=$('#deliveryAddressStatus');
+let addressSearchTimer=null,addressSearchController=null,addressSuggestionButtons=[];
+function closeAddressSuggestions(){
+  deliveryAddressSuggestions?.classList.add('hidden');
+  deliveryAddressSearch?.setAttribute('aria-expanded','false');
+  addressSuggestionButtons=[];
+}
+function clearAddressSuggestions(){
+  if(deliveryAddressSuggestions)deliveryAddressSuggestions.replaceChildren();
+  closeAddressSuggestions();
+}
+function setAddressStatus(text,error=false){
+  if(!deliveryAddressStatus)return;
+  deliveryAddressStatus.textContent=text;
+  deliveryAddressStatus.classList.toggle('error',error);
+}
 function syncDeliveryChoice(){
-  if(!needsDeliveryInput||!deliveryAddressGroup||!deliveryAddressInput)return;
+  if(!needsDeliveryInput||!deliveryAddressGroup||!deliveryAddressInput||!deliveryAddressSearch)return;
   const enabled=needsDeliveryInput.checked;
   deliveryAddressGroup.classList.toggle('hidden',!enabled);
-  deliveryAddressInput.disabled=!enabled;
-  deliveryAddressInput.required=enabled;
-  if(!enabled)deliveryAddressInput.value='';
+  deliveryAddressSearch.disabled=!enabled;
+  deliveryAddressSearch.required=enabled;
+  if(!enabled){
+    clearTimeout(addressSearchTimer);
+    addressSearchController?.abort();
+    deliveryAddressSearch.value='';
+    deliveryAddressInput.value='';
+    deliveryAddressSearch.setCustomValidity('');
+    setAddressStatus('');
+    clearAddressSuggestions();
+  }else if(!deliveryAddressInput.value){
+    deliveryAddressSearch.setCustomValidity('Choose a delivery address from the suggestions.');
+  }
 }
+function formatAddress(properties={}){
+  const clean=value=>String(value||'').trim();
+  const street=clean(properties.street);
+  const house=clean(properties.housenumber);
+  const primary=[house,street].filter(Boolean).join(' ')||clean(properties.name);
+  if(!primary)return '';
+  const parts=[primary,properties.district,properties.suburb,properties.city,properties.county,properties.state,properties.postcode,properties.country].map(clean).filter(Boolean);
+  return parts.filter((part,index)=>parts.findIndex(other=>other.toLowerCase()===part.toLowerCase())===index).join(', ');
+}
+function chooseAddress(address){
+  deliveryAddressSearch.value=address;
+  deliveryAddressInput.value=address;
+  deliveryAddressSearch.setCustomValidity('');
+  setAddressStatus('Address selected.');
+  clearAddressSuggestions();
+}
+function renderAddressSuggestions(features){
+  clearAddressSuggestions();
+  const matches=[];
+  const ordered=[...(features||[])].sort((a,b)=>Number(String(b?.properties?.countrycode||'').toUpperCase()==='AU')-Number(String(a?.properties?.countrycode||'').toUpperCase()==='AU'));
+  for(const feature of ordered){
+    const p=feature?.properties||{};
+    const address=formatAddress(p);
+    const hasStreet=Boolean(p.street||p.housenumber);
+    const hasDetail=Boolean(p.housenumber||p.postcode);
+    if(!address||!p.country||!hasStreet||!hasDetail||matches.some(item=>item.address===address))continue;
+    matches.push({address,properties:p});
+    if(matches.length===7)break;
+  }
+  if(!matches.length){setAddressStatus('No complete address suggestions found. Try adding the street name, suburb, or postcode.');return;}
+  const fragment=document.createDocumentFragment();
+  addressSuggestionButtons=[];
+  matches.forEach((match,index)=>{
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='address-suggestion';
+    button.id='delivery-address-option-'+index;
+    button.setAttribute('role','option');
+    button.setAttribute('aria-selected','false');
+    button.textContent=match.address;
+    button.addEventListener('click',()=>chooseAddress(match.address));
+    button.addEventListener('keydown',event=>{
+      if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+        event.preventDefault();
+        const next=(index+(event.key==='ArrowDown'?1:-1)+addressSuggestionButtons.length)%addressSuggestionButtons.length;
+        addressSuggestionButtons[next]?.focus();
+      }else if(event.key==='Escape'){
+        closeAddressSuggestions();
+        deliveryAddressSearch.focus();
+      }
+    });
+    addressSuggestionButtons.push(button);
+    fragment.append(button);
+  });
+  deliveryAddressSuggestions.append(fragment);
+  deliveryAddressSuggestions.classList.remove('hidden');
+  deliveryAddressSearch.setAttribute('aria-expanded','true');
+  setAddressStatus('Choose one of the suggested street addresses. Australian results are prioritised.');
+}
+async function searchDeliveryAddresses(query){
+  addressSearchController?.abort();
+  addressSearchController=new AbortController();
+  const controller=addressSearchController;
+  const params=new URLSearchParams({q:query,limit:'12',lat:'-25.2744',lon:'133.7751',zoom:'3',location_bias_scale:'0.7'});
+  setAddressStatus('Searching address suggestions...');
+  try{
+    const response=await fetch('https://photon.komoot.io/api/?'+params.toString(),{signal:controller.signal,headers:{Accept:'application/geo+json'}});
+    if(!response.ok)throw new Error('Address search service returned '+response.status);
+    const data=await response.json();
+    if(controller!==addressSearchController)return;
+    renderAddressSuggestions(data.features||[]);
+  }catch(error){
+    if(error.name==='AbortError')return;
+    if(controller!==addressSearchController)return;
+    clearAddressSuggestions();
+    setAddressStatus('Address suggestions are unavailable right now. Please try again shortly.',true);
+  }
+}
+deliveryAddressSearch?.addEventListener('input',()=>{
+  deliveryAddressInput.value='';
+  deliveryAddressSearch.setCustomValidity('Choose a delivery address from the suggestions.');
+  clearAddressSuggestions();
+  clearTimeout(addressSearchTimer);
+  addressSearchController?.abort();
+  const query=deliveryAddressSearch.value.trim();
+  if(query.length<3){setAddressStatus(query?'Type at least 3 characters to search.':'');return;}
+  addressSearchTimer=setTimeout(()=>searchDeliveryAddresses(query),350);
+});
+deliveryAddressSearch?.addEventListener('keydown',event=>{
+  if(event.key==='ArrowDown'&&addressSuggestionButtons.length){event.preventDefault();addressSuggestionButtons[0].focus();}
+  else if(event.key==='Enter'&&!deliveryAddressSuggestions?.classList.contains('hidden')&&addressSuggestionButtons.length){event.preventDefault();addressSuggestionButtons[0].click();}
+  else if(event.key==='Escape')closeAddressSuggestions();
+});
 needsDeliveryInput?.addEventListener('change',syncDeliveryChoice);
 syncDeliveryChoice();
 
@@ -43,7 +161,7 @@ if(quote)quote.addEventListener('submit',async e=>{
   const fd=new FormData(quote),s=await session();
   const needsDelivery=fd.get('needs_delivery')==='yes';
   const deliveryAddress=String(fd.get('delivery_address')||'').trim();
-  if(needsDelivery&&deliveryAddress.length<12)return msg(m,'Please enter your full delivery address, including street, suburb and postcode.',false);
+  if(needsDelivery&&deliveryAddress.length<12){deliveryAddressSearch?.setCustomValidity('Choose a complete delivery address from the suggestions.');deliveryAddressSearch?.reportValidity();return msg(m,'Choose a complete delivery address from the suggestions.',false);}
   const deliveryNotes=(needsDelivery?'Fulfilment: Delivery\nDelivery address: '+deliveryAddress:'Fulfilment: Customer pickup at studio')+'\n\n'+String(fd.get('notes')||'');
   const row={user_id:s?.user?.id||null,full_name:fd.get('full_name'),email:fd.get('email'),phone:fd.get('phone'),product:fd.get('product'),quantity:+fd.get('quantity'),size:fd.get('size'),paper:fd.get('paper'),print_sides:fd.get('print_sides'),finish:fd.get('finish'),design_service:fd.get('design_service')==='yes',notes:deliveryNotes};
   const input=$('#artwork'),files=[...(input?.files||[])];
