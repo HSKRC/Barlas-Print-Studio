@@ -213,10 +213,10 @@ h2{letter-spacing:-.035em;line-height:1.16}
 .shirt-shape{width:103px;height:112px;display:grid;place-items:center;clip-path:polygon(25% 0,40% 0,50% 10%,60% 0,75% 0,100% 22%,83% 39%,75% 31%,75% 100%,25% 100%,25% 31%,17% 39%,0 22%);background:#25231f;color:#f4d86a;font-size:34px;font-weight:900}
 .gallery-disclaimer{margin:20px 0 0;color:#6c685f;font-size:13px}
 .gallery-cta{width:100%;margin-top:26px}
-.cookie-consent{width:min(780px,calc(100% - 28px));gap:16px;padding:14px 18px;border-radius:14px}
-.cookie-consent strong{font-size:15px}
-.cookie-consent p{font-size:12px;line-height:1.45}
-.cookie-actions .btn{padding:10px 13px;font-size:11px}
+.cookie-consent{width:min(780px,calc(100% - 28px));gap:14px;padding:10px 14px;border-radius:14px}
+.cookie-consent strong{font-size:14px}
+.cookie-consent p{font-size:11px;line-height:1.4;margin-top:3px}
+.cookie-actions .btn{padding:9px 12px;font-size:10px}
 @media(max-width:850px){
  .nav{flex-wrap:nowrap;gap:12px}
  .nav-toggle{display:flex;order:2;margin-left:auto}
@@ -238,7 +238,7 @@ h2{letter-spacing:-.035em;line-height:1.16}
  .home-hero h1{font-size:clamp(40px,11vw,56px)}
  .gallery-samples{grid-template-columns:1fr}
  .sample-visual{height:180px}
- .cookie-consent{gap:9px;padding:12px}
+ .cookie-consent{gap:8px;padding:9px 11px}
  .cookie-actions{gap:8px}
  .cookie-actions .btn{padding:9px 10px;font-size:10px}
 }

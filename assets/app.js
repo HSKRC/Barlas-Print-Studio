@@ -337,7 +337,7 @@ account();
   banner.className='cookie-consent';
   banner.setAttribute('role','dialog');
   banner.setAttribute('aria-label','Cookie preferences');
-  banner.innerHTML='<div><strong>Your privacy matters</strong><p>We use essential cookies and local storage to keep customer accounts and the website working. Optional analytics or marketing cookies will only be used if you accept. <a href="privacy.html">Privacy Policy</a></p></div><div class="cookie-actions"><button type="button" class="btn dark" data-cookie-choice="accepted">Accept optional cookies</button><button type="button" class="btn" data-cookie-choice="rejected">Essential only</button></div>';
+  banner.innerHTML='<div><strong>Privacy choices</strong><p>Essential cookies support sign-in and site functions. Optional cookies need your consent. <a href="privacy.html">Privacy Policy</a></p></div><div class="cookie-actions"><button type="button" class="btn dark" data-cookie-choice="accepted">Accept optional cookies</button><button type="button" class="btn" data-cookie-choice="rejected">Essential only</button></div>';
   banner.addEventListener('click',event=>{
     const btn=event.target.closest('[data-cookie-choice]');
     if(!btn)return;
