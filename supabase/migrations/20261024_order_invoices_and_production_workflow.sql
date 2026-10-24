@@ -23,6 +23,8 @@ create table if not exists private.production_staff(
 );
 alter table private.production_staff enable row level security;
 revoke all on private.production_staff from public,anon,authenticated;
+drop policy if exists production_staff_deny_direct_api on private.production_staff;
+create policy production_staff_deny_direct_api on private.production_staff for all to authenticated using(false) with check(false);
 grant usage on schema private to authenticated;
 
 drop policy if exists customer_files_select_for_production_staff on storage.objects;
