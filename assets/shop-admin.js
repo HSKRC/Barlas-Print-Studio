@@ -6,11 +6,11 @@ let products=[],orders=[],editing=null;
 const statusList=['awaiting_review','awaiting_payment','preparing','ready_for_pickup','shipped','completed','cancelled'];
 function alertMessage(t,error=false){const e=$('#shopAdminMessage');if(e){e.textContent=t;e.classList.toggle('is-error',error);}}
 function productForm(){
- return '<form id="productEditor" class="panel"><h2 id="editorTitle">Add a product</h2><p class="muted">Products are hidden until you tick Publish. Set a real price before making an item available.</p><div class="formgrid"><label class="field">Product name<input name="name" maxlength="160" required placeholder="e.g. Barlas ceramic mug"></label><label class="field">SKU<input name="sku" maxlength="50" required placeholder="e.g. MUG-001"></label><label class="field">Category<select name="category"><option>Mugs & Drinkware</option><option>T-Shirts & Apparel</option><option>Stickers & Decals</option><option>Signs & Prints</option><option>Gifts & Accessories</option><option>Stationery</option><option>Other</option></select></label><label class="field">Price (AUD)<input type="number" name="price" step="0.01" min="0.01" max="1000000" required></label><label class="field">Stock on hand (leave blank for made to order)<input type="number" name="stock" min="0" max="100000" step="1" placeholder="Leave blank for no stock limit"></label><label class="field">Upload product photo (JPEG, PNG, WebP; max 5 MB)<input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label></div><label class="field">Description<textarea name="description" maxlength="2500" rows="4"></textarea></label><label class="field">Photo URL (optional alternative to upload)<input type="url" name="image_url" maxlength="800" placeholder="https://"></label><label style="display:flex;gap:10px;align-items:center;margin:16px 0"><input type="checkbox" name="is_active"> <strong>Publish to the public Shop</strong></label><div style="display:flex;gap:9px;flex-wrap:wrap"><button class="btn dark" type="submit" id="productSave">Save product</button><button class="btn" type="button" id="productReset">Clear / New product</button></div></form>';
+ return '<form id="productEditor" class="panel"><h2 id="editorTitle">Add a product</h2><p class="muted">Products are hidden until you tick Publish. Set a real price before making an item available.</p><div class="formgrid"><label class="field">Product name<input name="name" maxlength="160" required placeholder="e.g. Barlas ceramic mug"></label><label class="field">SKU<input name="sku" maxlength="50" required placeholder="e.g. MUG-001"></label><label class="field">Category<select name="category"><option>Mugs & Drinkware</option><option>T-Shirts & Apparel</option><option>Stickers & Decals</option><option>Signs & Prints</option><option>Gifts & Accessories</option><option>Stationery</option><option>Home & Decor</option><option>Promotional Gifts</option><option>Accessories</option><option>Electronics & Accessories</option><option>Other</option></select></label><label class="field">Price (AUD)<input type="number" name="price" step="0.01" min="0.01" max="1000000" required></label><label class="field">Original price (AUD, optional sale comparison)<input type="number" name="compare_at" step="0.01" min="0.01" max="1000000" placeholder="Leave blank unless discounted"></label><label class="field">Stock on hand (leave blank for made to order)<input type="number" name="stock" min="0" max="100000" step="1" placeholder="Leave blank for no stock limit"></label><label class="field">Upload product photo (JPEG, PNG, WebP; max 5 MB)<input type="file" name="photo" accept="image/jpeg,image/png,image/webp" multiple></label></div><div class="formgrid"><label class="field">Brand / supplier<input name="brand" maxlength="100" value="Barlas Print Studio"></label><label class="field">Variant group code (same for all colours/sizes)<input name="group_key" maxlength="90" placeholder="e.g. mug-classic"></label><label class="field">Colour / finish<input name="colour" maxlength="80" placeholder="e.g. Gloss black"></label><label class="field">Size / variant<input name="size_label" maxlength="80" placeholder="e.g. XL"></label></div><label class="field">Search tags (comma-separated)<input name="tags" maxlength="500" placeholder="gift, mug, personalised"></label><label class="field">Extra image URLs, one HTTPS URL per line (max 8 total images)<textarea name="gallery_urls" rows="3" maxlength="6400"></textarea></label><label class="field">Description<textarea name="description" maxlength="2500" rows="4"></textarea></label><label class="field">Photo URL (optional alternative to upload)<input type="url" name="image_url" maxlength="800" placeholder="https://"></label><label style="display:flex;gap:10px;align-items:center;margin:12px 0"><input type="checkbox" name="featured"> <strong>Featured product</strong></label><label style="display:flex;gap:10px;align-items:center;margin:16px 0"><input type="checkbox" name="is_active"> <strong>Publish to the public Shop</strong></label><div style="display:flex;gap:9px;flex-wrap:wrap"><button class="btn dark" type="submit" id="productSave">Save product</button><button class="btn" type="button" id="productReset">Clear / New product</button></div></form>';
 }
 function render(){
  const root=$('#shopAdminRoot');
- root.innerHTML='<div id="shopAdminMessage" class="shop-message" role="status">Shop Manager connected. Only administrators can change products and view orders.</div><div class="admin-stats" style="margin-top:24px"><div class="stat-card"><span>All products</span><strong>'+products.length+'</strong></div><div class="stat-card"><span>Published</span><strong>'+products.filter(p=>p.is_active).length+'</strong></div><div class="stat-card"><span>Shop orders</span><strong>'+orders.length+'</strong></div><div class="stat-card"><span>Waiting for review</span><strong>'+orders.filter(o=>o.status==='awaiting_review').length+'</strong></div></div><div class="shop-checkout-grid shop-admin-layout" style="gap:20px;margin-bottom:25px">'+productForm()+'<section class="panel"><h2>Product catalogue</h2><p class="muted">Edit a product to update its details. Uncheck Publish to remove it from the customer-facing store without losing order history.</p><div id="productList">'+(products.map(p=>'<div class="shop-history-row"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.sku)+' · '+money(p.price_cents)+' · '+(p.stock_qty==null?'Made to order':p.stock_qty+' in stock')+' · '+(p.is_active?'Published':'Hidden')+'</small></div><button class="btn small" type="button" data-edit="'+p.id+'">Edit</button></div>').join('')||'<p>No products yet. Use the form to create your first item.</p>')+'</div></section></div><section class="panel"><h2>Retail orders</h2><p class="muted">Orders are pending confirmation; update status only after contacting the customer. Card payments are not enabled. Delivery charges must be confirmed before collecting payment.</p><div id="shopAdminOrders">'+(orders.map(o=>orderCard(o)).join('')||'<p>No retail orders yet.</p>')+'</div></section>';
+ root.innerHTML='<div id="shopAdminMessage" class="shop-message" role="status">Shop Manager connected. Only administrators can change products and view orders.</div><div class="admin-stats" style="margin-top:24px"><div class="stat-card"><span>All products</span><strong>'+products.length+'</strong></div><div class="stat-card"><span>Published</span><strong>'+products.filter(p=>p.is_active).length+'</strong></div><div class="stat-card"><span>Shop orders</span><strong>'+orders.length+'</strong></div><div class="stat-card"><span>Waiting for review</span><strong>'+orders.filter(o=>o.status==='awaiting_review').length+'</strong></div></div><div class="shop-checkout-grid shop-admin-layout" style="gap:20px;margin-bottom:25px">'+productForm()+'<section class="panel"><h2>Product catalogue</h2><p class="muted">Edit a product to update its details. Uncheck Publish to remove it from the customer-facing store without losing order history.</p><div id="productList">'+(products.map(p=>'<div class="shop-history-row"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.sku)+' · '+money(p.price_cents)+' · '+(p.stock_qty==null?'Made to order':p.stock_qty+' in stock')+' · '+(p.is_active?'Published':'Hidden')+'</small></div><button class="btn small" type="button" data-edit="'+p.id+'">Edit</button></div>').join('')||'<p>No products yet. Use the form to create your first item.</p>')+'</div></section></div><section class="panel"><h2>Retail orders</h2><p class="muted">Orders are pending confirmation; update status only after contacting the customer. Card payment integration is prepared but remains disabled until the merchant account and verified webhook are connected. Confirm delivery charges before requesting payment.</p><div id="shopAdminOrders">'+(orders.map(o=>orderCard(o)).join('')||'<p>No retail orders yet.</p>')+'</div></section>';
  $('#productEditor').addEventListener('submit',saveProduct);
  $('#productReset').addEventListener('click',resetProduct);
  $('#productList').addEventListener('click',e=>{const b=e.target.closest('[data-edit]');if(b)editProduct(b.dataset.edit);});
@@ -25,8 +25,12 @@ function orderCard(o){
 function editProduct(id){
  const p=products.find(p=>p.id===id);if(!p)return;
  editing=id;const f=$('#productEditor');
- for(const n of ['name','sku','category','description','image_url'])f.elements[n].value=p[n]||'';
+ for(const n of ['name','sku','category','description','image_url','brand','group_key','colour','size_label'])f.elements[n].value=p[n]||'';
  f.elements.price.value=(p.price_cents/100).toFixed(2);
+ f.elements.compare_at.value=p.compare_at_cents==null?'':(p.compare_at_cents/100).toFixed(2);
+ f.elements.gallery_urls.value=(p.gallery_urls||[]).join('\n');
+ f.elements.tags.value=(p.tags||[]).join(', ');
+ f.elements.featured.checked=!!p.featured;
  f.elements.stock.value=p.stock_qty==null?'':p.stock_qty;
  f.elements.is_active.checked=p.is_active;f.elements.photo.value='';
  $('#editorTitle').textContent='Edit: '+p.name;f.scrollIntoView({behavior:'smooth',block:'start'});
@@ -38,23 +42,38 @@ async function saveProduct(e){
  e.preventDefault();const f=e.currentTarget,fd=new FormData(f);
  const p=Number(fd.get('price')),cents=Math.round(p*100);
  if(!Number.isFinite(cents)||cents<1||cents>100000000)return alertMessage('Enter a valid price in AUD.',true);
+ const compareRaw=String(fd.get('compare_at')||'').trim();
+ const compareAt=compareRaw===''?null:Math.round(Number(compareRaw)*100);
+ if(compareAt!==null&&(!Number.isFinite(compareAt)||compareAt<cents||compareAt>100000000))return alertMessage('The original price must be equal to or higher than the selling price.',true);
  const stockRaw=String(fd.get('stock')||'').trim();const stock=stockRaw===''?null:Number(stockRaw);
  if(stock!==null&&(!Number.isInteger(stock)||stock<0||stock>100000))return alertMessage('Enter a valid stock quantity.',true);
  let imageUrl=String(fd.get('image_url')||'').trim()||null;
  if(imageUrl&&!/^https:\/\//i.test(imageUrl))return alertMessage('Product image URL must use HTTPS.',true);
- const file=f.elements.photo.files?.[0];
- if(file){
-  if(file.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type))return alertMessage('Upload JPG, PNG or WebP under 5 MB.',true);
+ let galleryUrls=String(fd.get('gallery_urls')||'').split(/\r?\n/).map(v=>v.trim()).filter(Boolean);
+ if(galleryUrls.some(u=>!/^https:\/\//i.test(u)))return alertMessage('Gallery URLs must start with HTTPS.',true);
+ const files=[...(f.elements.photo.files||[])];
+ if(files.length+galleryUrls.length>8)return alertMessage('Maximum 8 additional images per product.',true);
+ for(const file of files){
+  if(file.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type))return alertMessage('Upload JPG, PNG or WebP images under 5 MB each.',true);
   const ext=({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'})[file.type];
   const path='products/'+crypto.randomUUID()+'.'+ext;
-  alertMessage('Uploading product photo…');
+  alertMessage('Uploading product photos…');
   const uploaded=await supabase.storage.from('shop-images').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});
   if(uploaded.error)return alertMessage('Photo upload failed: '+uploaded.error.message,true);
-  imageUrl=supabase.storage.from('shop-images').getPublicUrl(path).data.publicUrl;
+  const url=supabase.storage.from('shop-images').getPublicUrl(path).data.publicUrl;
+  if(!imageUrl)imageUrl=url;
+  else galleryUrls.push(url);
  }
+ if(galleryUrls.length>8)return alertMessage('Maximum 8 additional images.',true);
  const data={
    name:String(fd.get('name')||'').trim(),sku:String(fd.get('sku')||'').trim(),
    category:String(fd.get('category')||'Other'),description:String(fd.get('description')||'').trim(),
+   brand:String(fd.get('brand')||'Barlas Print Studio').trim().slice(0,100)||'Barlas Print Studio',
+   group_key:String(fd.get('group_key')||'').trim().slice(0,90)||null,
+   colour:String(fd.get('colour')||'').trim().slice(0,80)||null,
+   size_label:String(fd.get('size_label')||'').trim().slice(0,80)||null,
+   gallery_urls:galleryUrls,tags:String(fd.get('tags')||'').split(',').map(v=>v.trim()).filter(Boolean).slice(0,20),
+   compare_at_cents:compareAt,featured:fd.get('featured')==='on',
    image_url:imageUrl,price_cents:cents,stock_qty:stock,is_active:fd.get('is_active')==='on',updated_at:new Date().toISOString()
  };
  if(!data.name||!data.sku)return alertMessage('Name and SKU are required.',true);
