@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shop Ready-Made Gifts & Prints | Barlas Print Studio Melbourne</title>
+<meta name="description" content="Shop finished products made by Barlas Print Studio: personalised gifts, printed apparel, mugs, stickers and ready-to-buy items. Browse prices and add to your bag.">
+<link rel="canonical" href="https://barlasprintstudio.com.au/shop.html">
+<meta property="og:title" content="The Shop | Barlas Print Studio">
+<meta property="og:description" content="Made by our studio. Ready for your next gift, space or occasion.">
+<link rel="stylesheet" href="assets/styles.css?v=20261024-print-credit">
+<link rel="stylesheet" href="assets/shop.css?v=20261029-a">
+</head>
+<body>
+<div class="top"><div class="container"><span>BARLAS PRINT STUDIO · THE SHOP</span><span>Made in Melbourne · AUD</span></div></div>
+<header class="header"><div class="container nav">
+  <a class="brand brand-image" href="index.html"><img src="assets/barlas-wordmark.png" alt="Barlas Print Studio"></a>
+  <button class="nav-toggle" type="button" aria-label="Open navigation" aria-controls="site-navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+  <nav class="links" id="site-navigation" aria-label="Main navigation"><a href="index.html">Home</a><a href="services.html">Printing Services</a><a href="shop.html" aria-current="page">Shop</a><a href="quote.html">Get a Quote</a><a href="account.html">Account</a><a href="contact.html">Contact</a></nav>
+  <a class="btn dark" href="#shopping-bag">Bag <span id="bagCount">0</span></a>
+</div></header>
+<main>
+  <section class="shop-hero"><div class="container shop-hero-layout">
+    <div><span class="shop-kicker">THE BARLAS COLLECTION / MELBOURNE</span>
+      <h1>Made with care.<br><em>Ready to own.</em></h1>
+      <p>A dedicated home for the finished products we make. Shop gifts, prints and everyday favourites at listed prices. Custom commercial printing remains in our separate <a href="services.html">printing services</a> section.</p>
+      <a class="shop-primary" href="#products">Explore the collection <span aria-hidden="true">↗</span></a>
+    </div>
+    <div class="shop-feature-art" aria-hidden="true"><div class="shop-art-circle"></div><div class="shop-art-sheet">B<span>.</span><small>MADE BY BARLAS</small></div><div class="shop-art-label">DESIGNED<br>TO BE KEPT<span>↗</span></div><div class="shop-art-stamp">BPS / 2026</div></div>
+  </div></section>
+  <section class="shop-ribbon"><div class="container"><span>IN-HOUSE MADE</span><span>REAL PRODUCT PRICES</span><span>PICKUP OR DELIVERY REQUEST</span><span>SECURE CUSTOMER ACCOUNTS</span></div></section>
+  <section class="section" id="products"><div class="container">
+    <div class="shop-heading"><div><span class="shop-kicker">THE COLLECTION</span><h2>Find something you'll love.</h2></div><span id="productCount" class="shop-count" aria-live="polite">Loading products…</span></div>
+    <div class="shop-controls"><div class="shop-filters" id="categoryFilters" aria-label="Filter products"></div><label class="shop-search"><span class="sr-only">Search products</span><input id="shopSearch" type="search" placeholder="Search the shop…" autocomplete="off"></label></div>
+    <div id="shopMessage" class="shop-message" role="status" aria-live="polite"></div>
+    <div id="productGrid" class="shop-product-grid" aria-live="polite"></div>
+  </div></section>
+  <section class="shop-bag-section" id="shopping-bag"><div class="container shop-checkout-grid">
+    <div><span class="shop-kicker">YOUR SELECTION</span><h2>Shopping bag <span id="bagHeadingCount">(0)</span></h2><p class="shop-muted">Review your items and quantities before submitting your order.</p>
+      <div id="cartItems" class="shop-cart-items"></div>
+      <div class="shop-cart-total"><span>Items subtotal</span><strong id="cartSubtotal">$0.00</strong></div>
+      <p class="shop-fine">Prices in AUD. Delivery is not included and is never free by default. If requested, delivery cost will be confirmed separately before payment.</p>
+    </div>
+    <div class="shop-checkout-panel"><span class="shop-kicker">CHECKOUT</span><h3>Place your order</h3>
+      <p>Sign in with your Barlas Print Studio account. Your order is sent to our team for confirmation. <strong>No payment is charged online at this stage.</strong></p>
+      <div id="shopAuth" class="shop-auth-note">Checking your account…</div>
+      <form id="shopCheckout">
+        <label class="shop-field">Full name <input name="customer_name" maxlength="120" required autocomplete="name"></label>
+        <label class="shop-field">Phone number <input name="phone" type="tel" maxlength="40" required autocomplete="tel"></label>
+        <fieldset class="shop-fulfilment"><legend>How would you like to receive it?</legend>
+          <label><input type="radio" name="fulfilment" value="pickup" checked> Pickup (details confirmed after order)</label>
+          <label><input type="radio" name="fulfilment" value="delivery"> Request delivery (additional fee)</label>
+        </fieldset>
+        <label class="shop-field hidden" id="deliveryAddressField">Delivery address <textarea name="delivery_address" rows="2" maxlength="500" placeholder="Street, suburb, state and postcode"></textarea></label>
+        <label class="shop-field">Notes (optional) <textarea name="notes" rows="2" maxlength="1000" placeholder="Any details we should know?"></textarea></label>
+        <button id="shopPlaceOrder" class="shop-primary shop-submit" type="submit">Submit order for confirmation <span aria-hidden="true">↗</span></button>
+        <p class="shop-fine">Orders are not paid or confirmed until our team contacts you. See <a href="terms.html">terms</a> and <a href="refunds.html">refunds</a>.</p>
+      </form>
+      <div id="shopCheckoutMessage" class="shop-message" role="status" aria-live="polite"></div>
+    </div>
+  </div></section>
+  <section class="section"><div class="container"><div class="shop-history-head"><div><span class="shop-kicker">YOUR SHOP ORDERS</span><h2>Order history</h2></div><a href="account.html">Customer account ↗</a></div><div id="shopOrderHistory" class="shop-order-history">Sign in to view your shop orders.</div></div></section>
+  <section class="shop-services-note"><div class="container"><div><span class="shop-kicker">NEED SOMETHING ONE-OF-A-KIND?</span><h2>Custom jobs belong in our print studio.</h2><p>For custom sizes, bulk business printing, signs and bespoke requests, use our separate printing service.</p></div><a class="btn dark" href="quote.html">Get a custom quote</a></div></section>
+</main>
+<footer class="footer"><div class="container footergrid"><div><b>Barlas Print Studio</b><p>Ideas · Design · Print · Deliver</p><a href="tel:+61406577675">0406 577 675</a><a href="mailto:info@barlasprintstudio.com.au">info@barlasprintstudio.com.au</a></div><div><b>Shopping</b><a href="shop.html">Shop</a><a href="account.html">Customer Account</a><a href="terms.html">Terms</a><a href="refunds.html">Refunds</a></div><div><b>Studio</b><a href="services.html">Printing Services</a><a href="quote.html">Custom Quotes</a><a href="contact.html">Contact</a><a href="privacy.html">Privacy</a></div></div><div class="container">© <span class="year"></span> Barlas Print Studio</div></footer>
+<footer class="business-id"><strong>Registered Business Name: Barlas Print Studio</strong><span>ABN 50 393 779 735</span></footer>
+<script src="assets/config.js"></script><script type="module" src="assets/shop.js?v=20261029-a"></script><script src="assets/site-ui.js?v=20261029-shop"></script>
+</body></html>
