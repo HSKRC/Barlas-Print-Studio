@@ -244,3 +244,15 @@ h2{letter-spacing:-.035em;line-height:1.16}
 }
 
 .print-credit-panel{overflow:hidden}.credit-progress{height:10px;border-radius:999px;background:#e9e6df;overflow:hidden;margin:18px 0}.credit-progress span{display:block;height:100%;background:linear-gradient(90deg,var(--c),var(--m));border-radius:inherit}.credit-reward-list{display:grid;gap:8px;margin-top:16px}.credit-reward-list>div{display:flex;justify-content:space-between;gap:12px;padding:12px;border:1px solid #e5e5e5;border-radius:10px}.credit-reward-list b{white-space:nowrap}
+
+/* Print shop discovery panel on the studio homepage */
+.home-print-shop{background:#232924;color:#f6f4ec;padding:36px 0}
+.home-print-shop-layout{display:grid;grid-template-columns:1.4fr .6fr;gap:8%;align-items:center}
+.home-print-shop .eyebrow{color:#bcc8b9}
+.home-print-shop h2{font-size:clamp(27px,3vw,42px);line-height:1.08;letter-spacing:-.045em;color:#f8f7ee;margin:9px 0 12px}
+.home-print-shop p{max-width:700px;color:#d4d9d0;font-size:13px;line-height:1.8;margin:0}
+.home-print-shop-links{display:grid;gap:6px}
+.home-print-shop-links a{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #5c675c;border-radius:6px;color:#fff;font-size:12px;font-weight:850}
+.home-print-shop-links a:hover{background:#f1eee5;color:#262b26}
+.home-print-shop-links a span{font-size:18px}
+@media(max-width:700px){.home-print-shop-layout{grid-template-columns:1fr;gap:22px}.home-print-shop{padding:30px 0}}
