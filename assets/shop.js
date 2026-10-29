@@ -4,6 +4,7 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const money=cents=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format((Number(cents)||0)/100);
 const key='bps-retail-cart-v1';
 let products=[], cart={}, filter='All', user=null, submitting=false, paymentsEnabled=false;
+const requestedCategory=new URLSearchParams(location.search).get('category');
 let sortOrder='featured', stockOnly=false, favouritesOnly=false;
 const favouriteKey='bps-shop-wishlist-v1';
 let favourites={};
@@ -51,6 +52,7 @@ async function loadProducts(){
  const {data,error}=await supabase.from('shop_products').select('id,sku,name,description,category,image_url,price_cents,compare_at_cents,stock_qty,brand,tags,featured,created_at').eq('is_active',true).order('created_at',{ascending:false});
  if(error){notice('The product catalogue is temporarily unavailable. Please try again.',true);return;}
  products=data||[];
+ if(requestedCategory&&products.some(p=>p.category===requestedCategory))filter=requestedCategory;
  for(const id of Object.keys(cart)){const p=products.find(p=>p.id===id);if(!p||p.stock_qty===0)delete cart[id];else if(p.stock_qty!=null)cart[id]=Math.min(Number(cart[id])||1,p.stock_qty,100);}
  save();render();
 }
