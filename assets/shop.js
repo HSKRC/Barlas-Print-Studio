@@ -2,6 +2,7 @@ import { supabase, isConfigured } from './supabase.js';
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=cents=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format((Number(cents)||0)/100);
+const PRINT_CATEGORIES=["Stickers & Labels","Business Cards & Stationery","Flyers & Brochures","Posters & Art Prints","Banners & Signs","Vinyl & Decals","Vehicle & Window Graphics","Printed Apparel","Personalised Gifts","Print Materials & Supplies"];
 const key='bps-retail-cart-v1';
 let products=[], cart={}, filter='All', user=null, submitting=false, paymentsEnabled=false;
 const requestedCategory=new URLSearchParams(location.search).get('category');
@@ -16,9 +17,9 @@ function notice(text,bad=false,selector='#shopMessage'){const el=$(selector);el.
 const items=()=>products.filter(p=>cart[p.id]>0).map(p=>({p,qty:Math.min(100,Math.max(1,Number(cart[p.id])||1))}));
 const subtotal=()=>items().reduce((s,x)=>s+x.qty*x.p.price_cents,0);
 function renderFilters(){
-  const categories=['All',...new Set(products.map(p=>p.category))];
+  const categories=['All',...PRINT_CATEGORIES];
   if(!categories.includes(filter))filter='All';
-  $('#categoryFilters').innerHTML=categories.map(c=>'<button type="button" class="shop-filter '+(c===filter?'is-active':'')+'" data-filter="'+esc(c)+'">'+esc(c)+'</button>').join('');
+  $('#categoryFilters').innerHTML=categories.map(c=>'<button type="button" class="shop-filter '+(c===filter?'is-active':'')+'" data-filter="'+esc(c)+'" aria-pressed="'+(c===filter)+'">'+esc(c)+'</button>').join('');
 }
 function renderProducts(){
   const term=$('#shopSearch').value.trim().toLowerCase();
@@ -38,7 +39,7 @@ function renderProducts(){
     const detail='product.html?id='+encodeURIComponent(p.id);
     const sale=p.compare_at_cents>p.price_cents?'<span class="shop-sale-badge">SAVE '+Math.round((1-p.price_cents/p.compare_at_cents)*100)+'%</span>':'';
     return '<article class="shop-item"><div class="shop-item-art"><a href="'+detail+'" class="shop-item-art-link" aria-label="View '+esc(p.name)+'">'+photo+'</a><span class="shop-item-category">'+esc(p.category)+'</span>'+sale+'<button type="button" class="shop-favourite" data-favourite="'+p.id+'" aria-label="'+(favourites[p.id]?'Remove from':'Add to')+' wishlist" aria-pressed="'+!!favourites[p.id]+'">'+(favourites[p.id]?'♥':'♡')+'</button></div><div class="shop-item-body"><a class="shop-product-title" href="'+detail+'"><h3>'+esc(p.name)+'</h3></a><p>'+esc(p.description||'Available from Barlas Print Studio.')+'</p><div class="shop-item-bottom"><div><strong>'+money(p.price_cents)+'</strong>'+(p.compare_at_cents>p.price_cents?'<del>'+money(p.compare_at_cents)+'</del>':'')+'</div><button type="button" class="shop-add" data-add="'+p.id+'" '+(sold?'disabled':'')+'>'+(sold?'Sold out':qty?'Add another +':'Add to bag +')+'</button></div><small>'+(p.stock_qty==null?'Availability confirmed after ordering':p.stock_qty>0?'Available stock: '+p.stock_qty:'Currently unavailable')+'</small></div></article>';
-  }).join(''):'<div class="shop-empty"><h3>'+(products.length?'No products found.':'Our shop is being stocked.')+'</h3><p>'+(products.length?'Try another category or remove your filters.':'The products will appear here when the studio publishes its first listings.')+'</p></div>';
+  }).join(''):'<div class="shop-empty"><div class="shop-empty-symbol" aria-hidden="true">BPS / PRINT</div><h3>'+(filter!=='All'?esc(filter)+' collection':products.length?'No matching print products.':'Our print shop is being stocked.')+'</h3><p>'+(filter!=='All'?'No items are listed in this print collection yet. Please browse the other categories or request a quote for custom printing.':products.length?'Try another category, clear your filters or search again.':'Our print categories are ready. Real products, photos and prices will appear as soon as the studio publishes them.')+'</p><div class="shop-empty-actions"><a href="quote.html" class="shop-empty-link">Request a custom print quote ↗</a>'+(filter!=='All'?'<a href="shop.html#products" class="shop-empty-link">Browse all categories</a>':'')+'</div></div>';
 }
 function renderCart(){
   const lines=items(), totalQty=lines.reduce((n,x)=>n+x.qty,0);
@@ -52,7 +53,7 @@ async function loadProducts(){
  const {data,error}=await supabase.from('shop_products').select('id,sku,name,description,category,image_url,price_cents,compare_at_cents,stock_qty,brand,tags,featured,created_at').eq('is_active',true).order('created_at',{ascending:false});
  if(error){notice('The product catalogue is temporarily unavailable. Please try again.',true);return;}
  products=data||[];
- if(requestedCategory&&products.some(p=>p.category===requestedCategory))filter=requestedCategory;
+ if(requestedCategory&&PRINT_CATEGORIES.includes(requestedCategory))filter=requestedCategory;
  for(const id of Object.keys(cart)){const p=products.find(p=>p.id===id);if(!p||p.stock_qty===0)delete cart[id];else if(p.stock_qty!=null)cart[id]=Math.min(Number(cart[id])||1,p.stock_qty,100);}
  save();render();
 }
@@ -86,14 +87,21 @@ $('#shopOrderHistory').addEventListener('click',async e=>{
   window.location.assign(data.url);
  }catch(err){notice('Payment could not be started. Please contact the studio.',true);button.disabled=false;button.textContent='Pay securely →';}
 });
-$('#categoryFilters').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;filter=b.dataset.filter;renderFilters();renderProducts();});
+$('#categoryFilters').addEventListener('click',e=>{
+ const b=e.target.closest('[data-filter]');if(!b)return;
+ filter=b.dataset.filter;
+ const url=new URL(location.href);
+ if(filter==='All')url.searchParams.delete('category');else url.searchParams.set('category',filter);
+ history.replaceState(null,'',url.pathname+url.search+url.hash);
+ renderFilters();renderProducts();
+});
 $('#shopSearch').addEventListener('input',renderProducts);
 $('#productGrid').addEventListener('click',e=>{
  const b=e.target.closest('[data-add]');if(!b)return;
  const p=products.find(x=>x.id===b.dataset.add);if(!p||p.stock_qty===0)return;
  const max=p.stock_qty==null?100:Math.min(100,p.stock_qty);
  cart[p.id]=Math.min(max,(Number(cart[p.id])||0)+1);save();renderProducts();renderCart();
- notice(esc(p.name)+' added to your bag.');
+ notice(p.name+' added to your bag.');
 });
 $('#cartItems').addEventListener('click',e=>{
  const b=e.target.closest('[data-remove]');if(!b)return;delete cart[b.dataset.remove];save();renderProducts();renderCart();
