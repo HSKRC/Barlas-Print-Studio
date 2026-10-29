@@ -22,7 +22,7 @@ Deno.serve(async (req:Request)=>{
   if(typeof orderId!=="string"||!/^[a-f0-9-]{36}$/i.test(orderId))return json(400,{error:"Invalid order"});
   const setting=await client.from("shop_settings").select("payments_enabled").eq("id",1).single();
   if(setting.error||setting.data?.payments_enabled!==true)return json(503,{error:"Online payment is not enabled yet."});
-  const {data:order,error}=await client.from("shop_orders").select("id,user_id,customer_email,order_number,fulfilment,status,payment_status,subtotal_cents,delivery_fee_cents,shop_order_items(product_name,quantity,unit_price_cents,line_total_cents)").eq("id",orderId).single();
+  const {data:order,error}=await client.from("shop_orders").select("id,user_id,customer_email,order_number,fulfilment,status,payment_status,subtotal_cents,delivery_fee_cents,updated_at,shop_order_items(product_name,quantity,unit_price_cents,line_total_cents)").eq("id",orderId).single();
   if(error||!order||order.user_id!==user.id)return json(404,{error:"Order not found"});
   if(order.status!=="awaiting_payment"||order.payment_status!=="unpaid")return json(409,{error:"Order is not ready for payment"});
   if(order.fulfilment==="delivery"&&order.delivery_fee_cents===null)return json(409,{error:"Delivery cost must be confirmed first"});
@@ -38,7 +38,7 @@ Deno.serve(async (req:Request)=>{
     success_url:allowed+"/shop.html?payment=success#shopOrderHistory",
     cancel_url:allowed+"/shop.html?payment=cancelled#shopOrderHistory",
     "payment_method_types[0]":"card",
-    "expires_at":String(Math.floor(Date.now()/1000)+1800)
+    "expires_at":String(Math.floor(Date.now()/1000)+3600)
   });
   for(const [i,line] of lines.entries()){
     if(!Number.isInteger(line.unit_price_cents)||line.unit_price_cents<1||!Number.isInteger(line.quantity)||line.quantity<1) return json(400,{error:"Invalid order items"});
