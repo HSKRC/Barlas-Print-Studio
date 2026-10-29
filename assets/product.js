@@ -24,7 +24,7 @@ function render(){
   const q=Math.trunc(Number($('#detailQty').value)||1),max=p.stock_qty==null?100:Math.min(100,p.stock_qty);
   if(q<1||q>100)return notice('Please choose a valid quantity.');
   cart[p.id]=Math.min(max,(Number(cart[p.id])||0)+q);
-  save();bagCount();notice(esc(p.name)+' added to your shopping bag.');$('#detailAdd').textContent='Added ✓';
+  save();bagCount();notice(p.name+' added to your shopping bag.');$('#detailAdd').textContent='Added ✓';
  });
  $('#detailFavourite').addEventListener('click',()=>{
   if(favorites[p.id])delete favorites[p.id];else favorites[p.id]=true;
