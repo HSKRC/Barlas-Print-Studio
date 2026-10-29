@@ -38,3 +38,13 @@ Initial production-ready foundation. Add final business contact details, policie
 - Delivery fees are quoted separately and must be confirmed before the order moves forward. Staff review the order and record payment status manually. Stock is allocated only upon payment or advancement to preparation.
 - A live payment gateway, automatic invoicing, fulfillment/shipping integrations and notification emails have NOT been configured; do not present this as a paid checkout.
 - The production website deployment and a complete real-user checkout test should be checked independently.
+
+## Marketplace-style ecommerce upgrade (2026-10-29)
+- `shop.html`: categories, search, sorting, stock filtering, sales price display, customer wishlist, shopping bag and order history.
+- `product.html?id=...`: individual product galleries, SKU-specific colour and size variations, stock and direct add-to-cart.
+- `shop-admin.html`: publish/feature listings, real selling and optional comparison prices, SKU, variants, brand, photo gallery, tags, stock and order review.
+- Database: protected product, retail order and retail line tables with RLS; checkout totals are server-side, never client-authoritative. `shop_settings.payments_enabled` is **false** by default.
+- Stripe hosted payment scaffolding: `shop-payment-checkout` and `shop-stripe-webhook` Edge Functions, also versioned under `supabase/functions/`. Payment uses a verified signed webhook and server-side amount comparison. Must configure `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, register webhook endpoint with Stripe, test in Stripe TEST mode and explicitly enable `shop_settings.payments_enabled` before accepting card payments.
+- Payment is NOT live or ready to charge: pending setup, testing and merchant verification. The shop starts with zero products and zero retail orders. No simulated listings or sample prices have been published.
+- Delivery rates and carrier labels, automated stock returns/refunds, tax handling review, promo coupons, product reviews, marketing emails, bulk catalogue imports, and third-party seller marketplace onboarding are future work.
+- Check Cloudflare production deployment separately; this GitHub commit does not prove the domain has updated. The layout/JS was syntax checked but full browser checkout and live merchant flows cannot be verified before connection.
