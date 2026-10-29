@@ -1,21 +1,26 @@
 (() => {
   // A distinct retail shop link is shown throughout the existing static website.
   document.querySelectorAll('nav.links').forEach(nav => {
-    if (nav.querySelector('a[href="shop.html"]')) return;
+    const existingShop = nav.querySelector('a[href="shop.html"]');
+    if (existingShop) {
+      existingShop.textContent = 'Print Shop';
+      existingShop.setAttribute('aria-label', 'Shop stickers, signage, vinyl and printed products');
+      return;
+    }
     const services = nav.querySelector('a[href="services.html"]');
     if (services) {
       services.textContent = 'Printing Services';
       const shop = document.createElement('a');
       shop.href = 'shop.html';
-      shop.textContent = 'Shop';
-      shop.setAttribute('aria-label', 'Shop ready-made products');
+      shop.textContent = 'Print Shop';
+      shop.setAttribute('aria-label', 'Shop print-related products');
       services.insertAdjacentElement('afterend', shop);
     }
   });
   document.querySelectorAll('.footergrid').forEach(grid => {
     const column = grid.children[1];
     if (column && !column.querySelector('a[href="shop.html"]')) {
-      const a = document.createElement('a'); a.href = 'shop.html'; a.textContent = 'Shop ready-made products';
+      const a = document.createElement('a'); a.href = 'shop.html'; a.textContent = 'Print Shop';
       column.appendChild(a);
     }
   });
