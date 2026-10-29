@@ -3,7 +3,12 @@ const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=cents=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format((Number(cents)||0)/100);
 const key='bps-retail-cart-v1';
-let products=[], cart={}, filter='All', user=null, submitting=false;
+let products=[], cart={}, filter='All', user=null, submitting=false, paymentsEnabled=false;
+let sortOrder='featured', stockOnly=false, favouritesOnly=false;
+const favouriteKey='bps-shop-wishlist-v1';
+let favourites={};
+try{favourites=JSON.parse(localStorage.getItem(favouriteKey)||'{}')||{};}catch{}
+const saveFavourites=()=>{try{localStorage.setItem(favouriteKey,JSON.stringify(favourites));}catch{}};
 try { const saved=JSON.parse(localStorage.getItem(key)||'{}'); if(saved && typeof saved==='object' && !Array.isArray(saved))cart=saved; } catch {}
 const save=()=>{try{localStorage.setItem(key,JSON.stringify(cart));}catch{}};
 function notice(text,bad=false,selector='#shopMessage'){const el=$(selector);el.textContent=text||'';el.classList.toggle('is-error',bad);}
@@ -16,13 +21,23 @@ function renderFilters(){
 }
 function renderProducts(){
   const term=$('#shopSearch').value.trim().toLowerCase();
-  const visible=products.filter(p=>(filter==='All'||p.category===filter) && (p.name+' '+p.description+' '+p.sku).toLowerCase().includes(term));
-  $('#productCount').textContent=visible.length+' item'+(visible.length===1?'':'s');
+  const visible=products.filter(p=>(filter==='All'||p.category===filter)
+    && (!stockOnly||p.stock_qty!==0)
+    && (!favouritesOnly||favourites[p.id])
+    && (p.name+' '+p.description+' '+p.sku+' '+(p.tags||[]).join(' ')+' '+(p.brand||'')).toLowerCase().includes(term));
+  if(sortOrder==='price_asc')visible.sort((a,b)=>a.price_cents-b.price_cents);
+  else if(sortOrder==='price_desc')visible.sort((a,b)=>b.price_cents-a.price_cents);
+  else if(sortOrder==='name')visible.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(sortOrder==='newest')visible.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  else visible.sort((a,b)=>Number(b.featured)-Number(a.featured)||new Date(b.created_at)-new Date(a.created_at));
+  $('#productCount').textContent=visible.length+' product'+(visible.length===1?'':'s');
   $('#productGrid').innerHTML=visible.length?visible.map(p=>{
     const sold=p.stock_qty===0, qty=Number(cart[p.id]||0);
     const photo=p.image_url&&/^https:\/\//i.test(p.image_url)?'<img src="'+esc(p.image_url)+'" alt="'+esc(p.name)+'" loading="lazy">':'<span class="shop-placeholder" aria-hidden="true">B.</span>';
-    return '<article class="shop-item"><div class="shop-item-art">'+photo+'<span class="shop-item-category">'+esc(p.category)+'</span></div><div class="shop-item-body"><h3>'+esc(p.name)+'</h3><p>'+esc(p.description||'Made by Barlas Print Studio.')+'</p><div class="shop-item-bottom"><strong>'+money(p.price_cents)+'</strong><button type="button" class="shop-add" data-add="'+p.id+'" '+(sold?'disabled':'')+'>'+(sold?'Sold out':qty?'Add another +':'Add to bag +')+'</button></div><small>'+(p.stock_qty==null?'Made to order / availability confirmed':p.stock_qty>0?'Available stock: '+p.stock_qty:'Currently unavailable')+'</small></div></article>';
-  }).join(''):'<div class="shop-empty"><h3>'+(products.length?'No products match your search.':'Our shop is being stocked.')+'</h3><p>'+(products.length?'Try another category or search term.':'Finished products and their prices will appear here as soon as they are published by the studio. Please check back soon.')+'</p></div>';
+    const detail='product.html?id='+encodeURIComponent(p.id);
+    const sale=p.compare_at_cents>p.price_cents?'<span class="shop-sale-badge">SAVE '+Math.round((1-p.price_cents/p.compare_at_cents)*100)+'%</span>':'';
+    return '<article class="shop-item"><div class="shop-item-art"><a href="'+detail+'" class="shop-item-art-link" aria-label="View '+esc(p.name)+'">'+photo+'</a><span class="shop-item-category">'+esc(p.category)+'</span>'+sale+'<button type="button" class="shop-favourite" data-favourite="'+p.id+'" aria-label="'+(favourites[p.id]?'Remove from':'Add to')+' wishlist" aria-pressed="'+!!favourites[p.id]+'">'+(favourites[p.id]?'♥':'♡')+'</button></div><div class="shop-item-body"><a class="shop-product-title" href="'+detail+'"><h3>'+esc(p.name)+'</h3></a><p>'+esc(p.description||'Available from Barlas Print Studio.')+'</p><div class="shop-item-bottom"><div><strong>'+money(p.price_cents)+'</strong>'+(p.compare_at_cents>p.price_cents?'<del>'+money(p.compare_at_cents)+'</del>':'')+'</div><button type="button" class="shop-add" data-add="'+p.id+'" '+(sold?'disabled':'')+'>'+(sold?'Sold out':qty?'Add another +':'Add to bag +')+'</button></div><small>'+(p.stock_qty==null?'Availability confirmed after ordering':p.stock_qty>0?'Available stock: '+p.stock_qty:'Currently unavailable')+'</small></div></article>';
+  }).join(''):'<div class="shop-empty"><h3>'+(products.length?'No products found.':'Our shop is being stocked.')+'</h3><p>'+(products.length?'Try another category or remove your filters.':'The products will appear here when the studio publishes its first listings.')+'</p></div>';
 }
 function renderCart(){
   const lines=items(), totalQty=lines.reduce((n,x)=>n+x.qty,0);
@@ -33,7 +48,7 @@ function renderCart(){
 function render(){renderFilters();renderProducts();renderCart();}
 async function loadProducts(){
  if(!isConfigured){notice('The shop connection is not configured.',true);return;}
- const {data,error}=await supabase.from('shop_products').select('id,sku,name,description,category,image_url,price_cents,stock_qty').eq('is_active',true).order('created_at',{ascending:false});
+ const {data,error}=await supabase.from('shop_products').select('id,sku,name,description,category,image_url,price_cents,compare_at_cents,stock_qty,brand,tags,featured,created_at').eq('is_active',true).order('created_at',{ascending:false});
  if(error){notice('The product catalogue is temporarily unavailable. Please try again.',true);return;}
  products=data||[];
  for(const id of Object.keys(cart)){const p=products.find(p=>p.id===id);if(!p||p.stock_qty===0)delete cart[id];else if(p.stock_qty!=null)cart[id]=Math.min(Number(cart[id])||1,p.stock_qty,100);}
@@ -46,11 +61,29 @@ async function loadAuth(){
  if(user){
   const name=user.user_metadata?.full_name;
   if(name && !$('[name="customer_name"]').value)$('[name="customer_name"]').value=name;
-  const history=await supabase.from('shop_orders').select('order_number,created_at,status,payment_status,subtotal_cents,delivery_fee_cents,fulfilment').order('created_at',{ascending:false}).limit(40);
+  const history=await supabase.from('shop_orders').select('id,order_number,created_at,status,payment_status,subtotal_cents,delivery_fee_cents,fulfilment').order('created_at',{ascending:false}).limit(40);
   if(history.error){$('#shopOrderHistory').textContent='Unable to load order history.';return;}
-  $('#shopOrderHistory').innerHTML=history.data.length?history.data.map(o=>'<div class="shop-history-row"><div><strong>Shop order #'+o.order_number+'</strong><small>'+new Date(o.created_at).toLocaleDateString('en-AU')+' · '+esc(o.fulfilment)+' · '+esc(o.status.replaceAll('_',' '))+'</small></div><div><strong>'+money(o.subtotal_cents+(o.delivery_fee_cents||0))+'</strong><small>'+esc(o.payment_status)+(o.fulfilment==='delivery'&&o.delivery_fee_cents===null?' · Delivery fee not yet confirmed':'')+'</small></div></div>').join(''):'No shop orders yet.';
+  $('#shopOrderHistory').innerHTML=history.data.length?history.data.map(o=>'<div class="shop-history-row"><div><strong>Shop order #'+o.order_number+'</strong><small>'+new Date(o.created_at).toLocaleDateString('en-AU')+' · '+esc(o.fulfilment)+' · '+esc(o.status.replaceAll('_',' '))+'</small></div><div><strong>'+money(o.subtotal_cents+(o.delivery_fee_cents||0))+'</strong><small>'+esc(o.payment_status)+(o.fulfilment==='delivery'&&o.delivery_fee_cents===null?' · Delivery fee not yet confirmed':'')+'</small></div>'+(paymentsEnabled&&o.payment_status==='unpaid'&&o.status==='awaiting_payment'?'<button class="shop-pay-btn" data-pay-order="'+esc(o.id)+'" type="button">Pay securely →</button>':'')+'</div>').join(''):'No shop orders yet.';
  } else $('#shopOrderHistory').innerHTML='Sign in to view your shop orders.';
 }
+$('#shopSort').addEventListener('change',e=>{sortOrder=e.target.value;renderProducts();});
+$('#stockOnly').addEventListener('change',e=>{stockOnly=e.target.checked;renderProducts();});
+$('#favouritesOnly').addEventListener('change',e=>{favouritesOnly=e.target.checked;renderProducts();});
+$('#productGrid').addEventListener('click',e=>{
+ const b=e.target.closest('[data-favourite]');if(!b)return;
+ const id=b.dataset.favourite; if(favourites[id])delete favourites[id];else favourites[id]=true;
+ saveFavourites();renderProducts();
+});
+$('#shopOrderHistory').addEventListener('click',async e=>{
+ const button=e.target.closest('[data-pay-order]');if(!button||!paymentsEnabled)return;
+ button.disabled=true;button.textContent='Opening secure checkout…';
+ try{
+  const {data,error}=await supabase.functions.invoke('shop-payment-checkout',{body:{order_id:button.dataset.payOrder}});
+  if(error)throw error;
+  if(!data?.url||!/^https:\/\/checkout\.stripe\.com\//.test(data.url))throw new Error('Secure checkout unavailable.');
+  window.location.assign(data.url);
+ }catch(err){notice('Payment could not be started. Please contact the studio.',true);button.disabled=false;button.textContent='Pay securely →';}
+});
 $('#categoryFilters').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;filter=b.dataset.filter;renderFilters();renderProducts();});
 $('#shopSearch').addEventListener('input',renderProducts);
 $('#productGrid').addEventListener('click',e=>{
@@ -98,4 +131,12 @@ $('#shopCheckout').addEventListener('submit',async e=>{
  }catch(err){notice(err.message||'Your order could not be submitted. Please try again.',true,'#shopCheckoutMessage');}
  finally{submitting=false;renderCart();}
 });
-renderCart();await loadProducts();await loadAuth();
+renderCart();
+if(isConfigured){
+ const setting=await supabase.from('shop_settings').select('payments_enabled').eq('id',1).maybeSingle();
+ paymentsEnabled=!!setting.data?.payments_enabled;
+}
+const outcome=new URLSearchParams(location.search).get('payment');
+if(outcome==='success')notice('Thank you. Your card payment is being verified; the order status will update shortly.');
+else if(outcome==='cancelled')notice('Checkout was cancelled. You have not been charged by this checkout.');
+await loadProducts();await loadAuth();
