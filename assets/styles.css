@@ -256,3 +256,7 @@ h2{letter-spacing:-.035em;line-height:1.16}
 .home-print-shop-links a:hover{background:#f1eee5;color:#262b26}
 .home-print-shop-links a span{font-size:18px}
 @media(max-width:700px){.home-print-shop-layout{grid-template-columns:1fr;gap:22px}.home-print-shop{padding:30px 0}}
+
+/* Reserve the scrollbar gutter when moving between short and long pages. */
+html{overflow-y:scroll}
+#site-navigation a[aria-current="page"]{color:#171614;text-decoration:underline;text-underline-offset:5px}
