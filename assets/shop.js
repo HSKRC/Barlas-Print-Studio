@@ -142,11 +142,21 @@ $('#shopCheckout').addEventListener('submit',async e=>{
  finally{submitting=false;renderCart();}
 });
 renderCart();
-if(isConfigured){
- const setting=await supabase.from('shop_settings').select('payments_enabled').eq('id',1).maybeSingle();
- paymentsEnabled=!!setting.data?.payments_enabled;
+async function loadPaymentSettings(){
+ if(!isConfigured)return;
+ try {
+  const setting=await Promise.race([supabase.from('shop_settings').select('payments_enabled').eq('id',1).maybeSingle(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Settings timeout')),10000))]);
+  paymentsEnabled=!!setting.data?.payments_enabled;
+ } catch { paymentsEnabled=false; }
 }
+void loadPaymentSettings();
 const outcome=new URLSearchParams(location.search).get('payment');
 if(outcome==='success')notice('Thank you. Your card payment is being verified; the order status will update shortly.');
 else if(outcome==='cancelled')notice('Checkout was cancelled. You have not been charged by this checkout.');
-await loadProducts();await loadAuth();
+async function startShopTask(task, failure){
+ try{await Promise.race([task(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Connection timeout')),12000))]);}
+ catch{failure();}
+}
+void startShopTask(loadProducts,()=>{render();notice('The catalogue could not be loaded. Please request a quote, email info@barlasprintstudio.com.au or call 0406 577 675.',true);});
+void startShopTask(loadAuth,()=>{$('#shopAuth').innerHTML='Account connection unavailable. <a href="quote.html">Request a quote without an account</a>.';});
+
