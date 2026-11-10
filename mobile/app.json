@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Barlas Print Studio",
+    "slug": "barlas-print-studio",
+    "scheme": "barlasprintstudio",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "au.com.barlasprintstudio.app"
+    },
+    "android": {
+      "package": "au.com.barlasprintstudio.app"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
