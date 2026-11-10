@@ -1,3 +1,4 @@
+import {router} from 'expo-router';
 import React,{useEffect,useMemo,useState} from 'react';
 import {View,Text,ScrollView,Pressable,StyleSheet,Linking,TextInput,ActivityIndicator,RefreshControl} from 'react-native';
 import {fetchProducts,type Product} from '../lib/catalog';
@@ -15,7 +16,7 @@ export default function Home(){
  return <ScrollView style={s.page} refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh}/> }>
  <Text style={s.logo}>BPS</Text><Text style={s.title}>BARLAS print studio</Text><Text style={s.subtitle}>Printing & signage · Dandenong, Victoria</Text>
  <View style={s.links}><Pressable onPress={()=>Linking.openURL(website+'/quote.html')} style={s.smallButton}><Text style={s.buttonText}>Custom Quote</Text></Pressable><Pressable onPress={()=>Linking.openURL(website+'/account.html')} style={s.smallButton}><Text style={s.buttonText}>My Account</Text></Pressable></View>
- <Text style={s.heading}>Live Print Shop</Text><TextInput accessibilityLabel="Search products" placeholder="Search products..." style={s.search} value={search} onChangeText={setSearch}/>
+ <Text style={s.heading}>Shop & Services</Text><View style={s.links}>{([['/shop','Shop & Checkout'],['/quote','Upload & Quote'],['/account','My Account'],['/orders','Track Orders'],['/manage','Manage Products'],['/admin','Admin Dashboard'],['/invoices','Invoices']] as const).map(([path,label])=><Pressable key={path} style={s.smallButton} onPress={()=>router.push(path)}><Text style={s.buttonText}>{label}</Text></Pressable>)}</View><Text style={s.heading}>Live Print Shop</Text><TextInput accessibilityLabel="Search products" placeholder="Search products..." style={s.search} value={search} onChangeText={setSearch}/>
  {loading&&<ActivityIndicator/>}{!!error&&<Text style={s.error}>{error}</Text>}
  {!loading&&visible.map(p=><View key={p.id} style={s.card}><Text style={s.category}>{p.category}</Text><Text style={s.product}>{p.name}</Text><Text style={s.description}>{p.description||'Available from Barlas Print Studio.'}</Text><Text style={s.price}>{money(p.price_cents)}</Text><Text style={s.description}>{p.stock_qty===0?'Out of stock':p.stock_qty==null?'Availability confirmed after ordering':'Stock: '+p.stock_qty}</Text><View style={s.links}><Pressable disabled={p.stock_qty===0} style={[s.smallButton,p.stock_qty===0&&s.disabled]} onPress={()=>add(p)}><Text style={s.buttonText}>Add to list</Text></Pressable>{(cart[p.id]||0)>0&&<Pressable style={s.outlineButton} onPress={()=>remove(p.id)}><Text>Remove one ({cart[p.id]})</Text></Pressable>}</View></View>)}
  {!loading&&!error&&!visible.length&&<Text style={s.description}>No matching products. Pull down to refresh.</Text>}
