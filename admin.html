@@ -6,6 +6,15 @@
   <title>Admin | Barlas Print Studio</title>
   <meta name="robots" content="noindex,nofollow">
   <link rel="stylesheet" href="assets/styles.css?v=20261024-print-credit">
+<style>
+/* Admin navigation remains accessible on narrow mobile screens. */
+@media (max-width: 768px) {
+  .header .nav { display:flex !important; flex-direction:column !important; align-items:stretch !important; gap:12px; padding-top:12px; padding-bottom:12px; }
+  .header .links { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; width:100%; position:static !important; visibility:visible !important; opacity:1 !important; height:auto !important; overflow:visible !important; transform:none !important; }
+  .header .links a { display:flex !important; align-items:center; justify-content:center; text-align:center; padding:12px 8px; min-height:44px; white-space:normal; border:1px solid rgba(128,128,128,.3); border-radius:8px; font-size:13px; }
+  .header .brand { align-self:flex-start; }
+}
+</style>
 </head>
 <body>
 <header class="header">
