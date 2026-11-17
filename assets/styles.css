@@ -260,3 +260,22 @@ h2{letter-spacing:-.035em;line-height:1.16}
 /* Reserve the scrollbar gutter when moving between short and long pages. */
 html{overflow-y:scroll}
 #site-navigation a[aria-current="page"]{color:#171614;text-decoration:underline;text-underline-offset:5px}
+
+
+/* Barlas silver / black brand identity — November 2026 */
+:root{--k:#090909;--c:#777b82;--m:#a8abb0;--y:#d5d7da;--g:#f4f4f5;--b:#dedfe2}
+.top,.pagehero,.footer{background:#080808}
+.header{background:#fff;border-bottom:1px solid #d7d7d7}
+.btn.cmyk{background:linear-gradient(120deg,#f2f2f2,#a3a6ab,#e4e4e4);color:#111;border:1px solid #a3a6ab}
+.btn.dark{background:#111;color:#fff}
+.hero h1 span,.home-hero h1 span{background:linear-gradient(115deg,#292929,#898c91,#222);-webkit-background-clip:text;background-clip:text;color:transparent}
+.home-print-shop{background:#121212;color:#f5f5f5}
+.home-print-shop h2{color:#fff}
+.home-print-shop .eyebrow,.home-print-shop p{color:#c9c9c9}
+.home-print-shop-links a{border-color:#666}
+.home-print-shop-links a:hover{background:#d6d7da;color:#111}
+.mark{background:linear-gradient(140deg,#fff,#8d9095,#111)}
+.o1{background:#c8c9cc}.o2{background:#888b90}.o3{background:#242424}
+.notice{background:#f3f3f4;border-left-color:#8b8d92}
+.credit-progress span{background:linear-gradient(90deg,#62656a,#c8c9cc)}
+.brand.brand-image img{object-fit:contain}
